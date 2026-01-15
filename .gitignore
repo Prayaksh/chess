@@ -1,0 +1,15 @@
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Secrets
+*.key
+*.pem
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
