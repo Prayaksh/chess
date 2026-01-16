@@ -18,7 +18,10 @@ function App() {
       <button
         className="h-100 w-300 p-20 bg-red-900"
         onClick={() => {
-          socket.emit("message", { type: "init_game", payload: {} });
+          socket.emit("message", {
+            type: "init_game",
+            payload: { message: "Game initialized " },
+          });
         }}
       >
         send json message

@@ -29,10 +29,11 @@ export class GameManager {
     user.socket.on("message", async (message) => {
       if (!message) return;
       if (message.type === "init_game" && user.gameID) {
-        socketManager.broadcast(user.gameID, {
-          type: "game_alert",
+        user.socket.emit("message", {
+          type: "player_alert",
           payload: { message: "Already in a game" },
         });
+        return;
       }
       if (message.type === "init_game") {
         if (this.pendingGameID) {
@@ -59,9 +60,11 @@ export class GameManager {
           this.games.push(game);
           this.pendingGameID = game.gameID;
           socketManager.addUser(user, game.gameID);
+          user.gameID = game.gameID;
           socketManager.broadcast(game.gameID, {
             type: "game_added",
             gameID: game.gameID,
+            payload: { message: "Waiting for other player to join" },
           });
           console.log("user created game and waiting for other player");
         }
