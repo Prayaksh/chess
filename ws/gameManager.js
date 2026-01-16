@@ -28,6 +28,12 @@ export class GameManager {
   addHandler(user) {
     user.socket.on("message", async (message) => {
       if (!message) return;
+      if (message.type === "init_game" && user.gameID) {
+        socketManager.broadcast(user.gameID, {
+          type: "game_alert",
+          payload: { message: "Already in a game" },
+        });
+      }
       if (message.type === "init_game") {
         if (this.pendingGameID) {
           const game = this.games.find((g) => g.gameID === this.pendingGameID);
@@ -43,7 +49,9 @@ export class GameManager {
             });
             return;
           }
+
           socketManager.addUser(user, game.gameID);
+          user.gameID = game.gameID;
           await game?.updateSecondPlayer(user.id);
           this.pendingGameID = null;
         } else {
@@ -78,6 +86,7 @@ export class GameManager {
           game.exitGame(user);
           this.removeGame(game.gameID);
         }
+        user.gameID = null;
       }
     });
   }
