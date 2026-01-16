@@ -7,17 +7,26 @@ import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
 
 authRouter.post("/login", async (req, res) => {
-  const { userEmail, userPassword } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const hashedPassword = await bcrypt.hash(userPassword, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  //add this to the database and move to the profile
+    //add this to the database and move to the profile
 
-  req.session.user = {
-    name: userEmail,
-    email: userEmail,
-    provider: "login",
-  };
+    req.session.user = {
+      name: email,
+      email: email,
+      provider: "login",
+    };
+
+    if (req.session.user) {
+      res.status(200).json({ success: true });
+    }
+  } catch (error) {
+    console.error("error creating user");
+    res.status(500).json({ success: false });
+  }
 });
 
 authRouter.get("/google", (req, res) => {
@@ -27,7 +36,7 @@ authRouter.get("/google", (req, res) => {
     response_type: "code",
     scope: "profile email",
     access_type: "offline",
-    prompt: "consent",
+    prompt: "none",
   });
 
   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
@@ -57,7 +66,7 @@ authRouter.get(
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-        }
+        },
       );
 
       const { access_token } = tokenResponse.data;
@@ -68,7 +77,7 @@ authRouter.get(
           headers: {
             Authorization: `Bearer ${access_token}`,
           },
-        }
+        },
       );
 
       const user = userInfo.data;
@@ -80,13 +89,11 @@ authRouter.get(
         ...user,
         provider: "google",
       };
-
-      res.redirect("/profile");
     } catch (error) {
       console.error("OAuth Error:", error.response?.data || error);
       res.status(500).send("Authentication failed");
     }
-  }
+  },
 );
 
 authRouter.get("/github", (req, res) => {
@@ -123,7 +130,7 @@ authRouter.get("/github/callback", async (req, res) => {
           Accept: "application/json",
           "User-Agent": "my-node-oauth-app",
         },
-      }
+      },
     );
 
     const { access_token } = response.data;
@@ -138,8 +145,6 @@ authRouter.get("/github/callback", async (req, res) => {
       ...user.data,
       provider: "Github",
     };
-
-    res.redirect("/profile");
   } catch (error) {
     console.log(error);
   }
