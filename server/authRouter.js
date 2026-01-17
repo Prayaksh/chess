@@ -89,6 +89,7 @@ authRouter.get(
         ...user,
         provider: "google",
       };
+      res.redirect("/profile");
     } catch (error) {
       console.error("OAuth Error:", error.response?.data || error);
       res.status(500).send("Authentication failed");
@@ -145,6 +146,8 @@ authRouter.get("/github/callback", async (req, res) => {
       ...user.data,
       provider: "Github",
     };
+
+    res.redirect("/profile");
   } catch (error) {
     console.log(error);
   }

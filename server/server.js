@@ -13,7 +13,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 * 24 },
-  })
+  }),
 );
 app.use(express.json());
 
@@ -22,11 +22,11 @@ app.use("/auth", authRouter);
 // app.use("/game", gameRouter);
 // app.use("/game", express.static(path.join(process.cwd(), "../user/dist")));
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.send("home route");
 });
 
-app.get("/profile", isAuthenticated, (req, res) => {
+app.get("/api/profile", isAuthenticated, (req, res) => {
   res.json(req.session.user);
 });
 

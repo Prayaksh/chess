@@ -1,0 +1,80 @@
+{
+  "client": {
+    "message": [
+      {
+        "type": "init_game",
+        "payload": { "message": "Game initialized " }
+      },
+      {
+        "type": "move",
+        "payload": { "gameID": "gameID", "move": { "from": "e2", "to": "e4" } }
+      }
+    ]
+  },
+  "server": {
+    "message": [
+      {
+        "type": "game_alert",
+        "payload": { "message": "Game initialized " }
+      },
+      {
+        "type": "game_alert",
+        "payload": { "message": "Trying to connect to yourself?" }
+      },
+      {
+        "type": "game_added",
+        "gameID": "game.gameID",
+        "payload": { "message": "Waiting for other player to join" }
+      },
+      {
+        "type": "init_game",
+        "payload": {
+          "gameID": "this.gameID",
+          "whitePlayer": { "id": "this.P1UserID" },
+          "blackPlayer": { "id": "this.P2UserID" },
+          "fen": "this.board.fen()",
+          "moves": []
+        }
+      },
+      {
+        "type": "game_alert",
+        "payload": { "message": "Invalid Move" }
+      },
+      {
+        "type": "move",
+        "payload": {
+          "move": "move",
+          "fen": "this.board.fen()",
+          "P1TimeConsumed": "this.P1TimeConsumed",
+          "P2TimeConsumed": "this.P2TimeConsumed"
+        }
+      },
+      {
+        "type": "game_ended",
+        "payload": {
+          "result": "result",
+          "status": "status",
+          "fen": "this.board.fen()",
+          "P1TimeConsumed": "this.P1TimeConsumed",
+          "P2TimeConsumed": "this.P2TimeConsumed"
+        }
+      },
+      {}
+    ],
+    "oauth": {
+      "google": {
+        "googleID": "111054716799415558494",
+        "name": "Prayaksh Upadhayay",
+        "email": "prayaksh.upadhayay@adypu.edu.in",
+        "id": "111054716799415558494",
+        "verified_email": true,
+        "given_name": "Prayaksh",
+        "family_name": "Upadhayay",
+        "picture": "https://lh3.googleusercontent.com/a/ACg8ocJSNZVlcrf3mzDxa9AqPu_NxJVnS9jLB4J5FRX0NmUdaRs6uA=s96-c",
+        "hd": "adypu.edu.in",
+        "provider": "google"
+      },
+      "github": {}
+    }
+  }
+}
