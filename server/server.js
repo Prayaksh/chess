@@ -12,7 +12,7 @@ app.use(
     secret: "keyboard cat",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 },
+    cookie: { maxAge: 1000 * 60 * 60 * 24, sameSite: "lax", secure: false },
   }),
 );
 app.use(express.json());
@@ -34,7 +34,7 @@ function isAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
     return next();
   }
-  res.status(401).redirect("/auth");
+  res.status(401).json({ error: "UNAUTHORIZED" });
 }
 
 app.use(express.static(path.join(process.cwd(), "../user/dist")));
