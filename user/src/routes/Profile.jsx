@@ -1,35 +1,42 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useAuth } from "../Hook.jsx";
+import { useNavigate } from "react-router-dom";
 
 const getUser = async () => {
   try {
     const response = await axios.get("http://localhost:3000/api/profile", {
       withCredentials: true,
     });
-
-    return response.data;
+    if (response.status === 200) {
+      return response.data;
+    }
   } catch (error) {
-    console.error("Error is getting the user", error);
+    if (error.response?.status === 401) {
+      return null;
+    } else {
+      console.error("Error in getting the user", error);
+      return null;
+    }
   }
 };
 
 const Profile = () => {
-  const [user, setUser] = useState({});
-
+  const navigate = useNavigate();
+  const { user, setUser } = useAuth();
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const userData = await getUser();
+        console.log(userData);
         if (!userData) {
-          console.error("error while getting the userdata");
+          navigate("/auth");
           return;
         }
 
-        setUser((pre) => ({
-          ...pre,
-          ...userData,
-        }));
+        setUser(userData);
+        console.log("user set in context");
       } catch (error) {
         console.error("error occured while fetching user", error);
       }

@@ -20,7 +20,7 @@ const sendLoginData = async ({ email, password }) => {
 };
 
 const Auth = () => {
-  const [user, setUser] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
   return (
@@ -29,22 +29,26 @@ const Auth = () => {
         type="email"
         name="email"
         placeholder="narendra.modi@gmail.com"
-        value={user.email}
-        onChange={(e) => setUser({ ...user, [e.target.name]: e.target.value })}
+        value={formData.email}
+        onChange={(e) =>
+          setFormData({ ...formData, [e.target.name]: e.target.value })
+        }
       />
       <input
         type="password"
         name="password"
         placeholder="password"
-        value={user.password}
-        onChange={(e) => setUser({ ...user, [e.target.name]: e.target.value })}
+        value={formData.password}
+        onChange={(e) =>
+          setFormData({ ...formData, [e.target.name]: e.target.value })
+        }
       />
 
       <button
         onClick={async () => {
-          const { success } = await sendLoginData(user);
+          const { success } = await sendLoginData(formData);
           if (!success) {
-            console.error("error while posting the user data");
+            console.error("error while posting the formData data");
             return;
           }
 
@@ -56,7 +60,7 @@ const Auth = () => {
 
       <button
         onClick={() => {
-          window.location.href = "/auth/google";
+          navigate("/auth/google");
           //automatically redirects to /profile
         }}
       >
@@ -64,7 +68,7 @@ const Auth = () => {
       </button>
       <button
         onClick={() => {
-          window.location.href = "/auth/github";
+          navigate("/auth/github");
           //automatically redirects to /profile
         }}
       >
