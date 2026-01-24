@@ -25,7 +25,7 @@ authRouter.post("/login", async (req, res) => {
     }
   } catch (error) {
     console.error("error creating user");
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, error: "UNSUCCESSFULL" });
   }
 });
 

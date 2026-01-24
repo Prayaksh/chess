@@ -1,7 +1,6 @@
 import express from "express";
 import { authRouter } from "./authRouter.js";
 import session from "express-session";
-import { gameRouter } from "./gameRouter.js";
 import path from "path";
 import { __dirname } from "./gameRouter.js";
 const app = express();
@@ -19,29 +18,31 @@ app.use(express.json());
 
 app.use("/auth", authRouter);
 
-// app.use("/game", gameRouter);
-// app.use("/game", express.static(path.join(process.cwd(), "../user/dist")));
-
 app.get("/api", (req, res) => {
-  res.send("home route");
+  res.json({ route: "/api" });
 });
 
 app.get("/api/profile", isAuthenticated, (req, res) => {
-  res.json(req.session.user);
+  res.json({ user: req.session.user, autheticated: true });
 });
 
 function isAuthenticated(req, res, next) {
   if (req.session && req.session.user) {
     return next();
   }
-  res.status(401).json({ error: "UNAUTHORIZED" });
+  res
+    .status(401)
+    .json({ error: "UNAUTHORIZED", autheticated: false, user: null });
 }
 
-app.use(express.static(path.join(process.cwd(), "../user/dist")));
+//serving the static resources (js and css)
+app.use(express.static(path.join(process.cwd(), "../client/dist")));
 
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(process.cwd(), "../user/dist/index.html"));
+//serving the html (all frontend routes goes here)
+app.use(/.*/, (req, res) => {
+  res.sendFile(path.join(process.cwd(), "../client/dist/index.html"));
 });
+
 app.listen(PORT, () => {
   console.log(`Listening at http://Localhost:${PORT}`);
 });
