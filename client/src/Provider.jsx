@@ -1,6 +1,7 @@
-import { AuthContext } from "./Context.jsx";
+import { AuthContext, SocketContext } from "./Context.jsx";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { socket } from "./socket.js";
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
 
       setUser(response.data.user);
     } catch (error) {
+      console.error("User not logged in", error);
       setUser(null);
     }
   };

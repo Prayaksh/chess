@@ -23,8 +23,10 @@
       },
       {
         "type": "game_added",
-        "gameID": "game.gameID",
-        "payload": { "message": "Waiting for other player to join" }
+        "payload": {
+          "gameID": "44f3b690-0692-49c6-b3a5-a1190aaa23ac",
+          "message": "Waiting for other player to join"
+        }
       },
       {
         "type": "init_game",

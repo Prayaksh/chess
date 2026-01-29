@@ -23,6 +23,13 @@ const HomePage = () => {
       >
         Move to Auth
       </button>
+      <button
+        onClick={() => {
+          navigate("/game");
+        }}
+      >
+        Move to Game
+      </button>
     </div>
   );
 };

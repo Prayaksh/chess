@@ -1,10 +1,8 @@
-import { randomUUID } from "crypto";
-
 export class User {
   constructor(socket) {
     this.socket = socket;
-    this.socketID = socket.id;
-    this.id = randomUUID();
+    this.id = socket.id;
+    //when applying the reconnect logic try to make the id constant and not socketid cause it changes with every reconnect
   }
 }
 
@@ -25,6 +23,7 @@ class SocketManager {
     }
   }
   addUser(user, roomID) {
+    console.log("add user here");
     const existing = this.socketsmap.get(roomID) || [];
     this.socketsmap.set(roomID, [...existing, user]);
     this.roomsmap.set(user.id, roomID);
@@ -43,6 +42,7 @@ class SocketManager {
   }
 
   removeUser(user) {
+    console.log("socket manager remove user here ");
     const roomID = this.roomsmap.get(user.id);
     if (!roomID) {
       console.error("user not in any room");

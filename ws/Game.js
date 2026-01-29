@@ -132,8 +132,8 @@ export class Game {
       const result = this.board.isDraw()
         ? "DRAW"
         : this.board.turn() === "b"
-        ? "BLACK_WINS"
-        : "WHITE_WINS";
+          ? "BLACK_WINS"
+          : "WHITE_WINS";
 
       this.endGame("COMPLETED", result);
       return;
@@ -158,11 +158,14 @@ export class Game {
   resetAbandonTimer() {
     console.log("resetAbandonTimer initialized");
     if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      const winner = this.board.turn() === "b" ? "WHITE_WINS" : "BLACK_WINS";
-      console.log("ending game with status ABANDONED");
-      this.endGame("ABANDONED", winner);
-    }, 60 * 1000); //make it 1 min after debugging
+    this.timer = setTimeout(
+      () => {
+        const winner = this.board.turn() === "b" ? "WHITE_WINS" : "BLACK_WINS";
+        console.log("ending game with status ABANDONED");
+        this.endGame("ABANDONED", winner);
+      },
+      60 * 1000 * 10,
+    ); //make it 1 min after debugging
   }
 
   resetMoveTimer() {

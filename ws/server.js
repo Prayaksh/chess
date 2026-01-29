@@ -17,7 +17,10 @@ io.on("connection", (socket) => {
   const user = new User(socket);
   gameManager.addUser(user);
 
-  socket.on("disconnect", () => gameManager.removeUser(socket));
+  socket.on("disconnect", () => {
+    console.log("socket disconnect calling removeuser");
+    gameManager.removeUser(socket);
+  });
 });
 
 io.listen(PORT, console.log(`WSS started at http://Localhost:${PORT}`));

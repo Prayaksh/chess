@@ -8,6 +8,7 @@ export class GameManager {
     this.users = [];
   }
   addUser(user) {
+    console.log("adduser here");
     this.users.push(user);
     this.addHandler(user);
   }
@@ -22,12 +23,18 @@ export class GameManager {
     socketManager.removeUser(user);
   }
   removeGame(gameID) {
+    console.log("remove game here");
     this.games = this.games.filter((g) => g.gameID !== gameID);
   }
 
   addHandler(user) {
+    console.log("addHandler here");
     user.socket.on("message", async (message) => {
       if (!message) return;
+
+      console.log("Socket messaged - ", message);
+      console.log("Socket message datatype - ", typeof message);
+      console.log("socket message type -", message.type);
       if (message.type === "init_game" && user.gameID) {
         user.socket.emit("message", {
           type: "player_alert",
@@ -63,8 +70,11 @@ export class GameManager {
           user.gameID = game.gameID;
           socketManager.broadcast(game.gameID, {
             type: "game_added",
-            gameID: game.gameID,
-            payload: { message: "Waiting for other player to join" },
+
+            payload: {
+              message: "Waiting for other player to join",
+              gameID: game.gameID,
+            },
           });
           console.log("user created game and waiting for other player");
         }

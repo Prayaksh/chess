@@ -2,7 +2,7 @@ import express from "express";
 import { authRouter } from "./authRouter.js";
 import session from "express-session";
 import path from "path";
-import { __dirname } from "./gameRouter.js";
+import { gameRouter } from "./gameRouter.js";
 const app = express();
 const PORT = 3000;
 
@@ -17,10 +17,10 @@ app.use(
 app.use(express.json());
 
 app.use("/auth", authRouter);
-
 app.get("/api", (req, res) => {
   res.json({ route: "/api" });
 });
+app.use("/api/game", isAuthenticated, gameRouter);
 
 app.get("/api/profile", isAuthenticated, (req, res) => {
   res.json({ user: req.session.user, autheticated: true });

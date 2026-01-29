@@ -6,21 +6,33 @@ import TestPage from "./pages/TestPage.jsx";
 import Auth from "./routes/Auth.jsx";
 import Profile from "./routes/Profile.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import Game from "./routes/Game.jsx";
+import ProtectedRoutes from "./routes/ProtectedRoutes.jsx";
 
 function App() {
   return (
     //loading state skeleton
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/test" element={<TestPage />} />
           <Route path="/login" element={<Auth />} />
+
+          <Route
+            path="/test"
+            element={
+              <ProtectedRoutes>
+                <TestPage />
+              </ProtectedRoutes>
+            }
+          />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/game" element={<Game />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
