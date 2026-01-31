@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
-import { useSocket } from "./SocketProvider.jsx";
-import { socket } from "./main.js";
-
+import useSocket from "../hooks/useSocket.jsx";
+import { socket } from "../socket.js";
 function ChessBoard() {
   const { serverMessage, emitEvent } = useSocket();
-  const [val, setVal] = useState("");
   const [gameState, setGameState] = useState({
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     gameID: null,
@@ -35,16 +33,6 @@ function ChessBoard() {
     }
   }, [gameState.fen]);
 
-  //Server message processing goes here
-  // switch (serverMessage.type) {
-  //   case "init_game":
-  //   case "game_alert":
-  //   case "init_game":
-  //   case "move":
-  //   case "game_ended":
-  //   default:
-  // }
-
   // handle piece drop
   function onPieceDrop({ sourceSquare, targetSquare }) {
     // type narrow targetSquare potentially being null (e.g. if dropped off board)
@@ -62,15 +50,6 @@ function ChessBoard() {
           move: { from: sourceSquare, to: targetSquare },
         },
       });
-
-      // chessGame.move({
-      //   from: sourceSquare,
-      //   to: targetSquare,
-      //   promotion: "q", // always promote to a queen for example simplicity
-      // });
-
-      // update the position state upon successful move to trigger a re-render of the chessboard
-
       // return true as the move was successful
       return true;
     } catch {
@@ -161,12 +140,6 @@ function ChessBoard() {
     }
     // is normal move
     try {
-      // chessGame.move({
-      //   from: moveFrom,
-      //   to: square,
-      //   promotion: "q",
-      // });
-
       emitEvent("message", {
         type: "move",
         payload: {
@@ -213,7 +186,9 @@ function ChessBoard() {
   // render both chessboards side by side with a gap
   return (
     <>
-      {gameState.gameID ? (
+      {serverMessage.type === "game_ended" ? (
+        <div>GAME OVER {serverMessage.payload.result}</div>
+      ) : gameState.gameID ? (
         <div>Connected to the game</div>
       ) : (
         <button
@@ -263,23 +238,17 @@ function ChessBoard() {
             )}
           </div>
         </div>
-        {/* <div>
-        <p
-          style={{
-            textAlign: "center",
-          }}
-        >
-          Black&apos;s perspective
-        </p>
-        <div
-          style={{
-            maxWidth: "400px",
-          }}
-        >
-          <Chessboard options={blackBoardOptions} />
-        </div>
-      </div> */}
       </div>
+      <button
+        onClick={() => {
+          emitEvent("message", {
+            type: "exit_game",
+            payload: { gameID: gameState.gameID },
+          });
+        }}
+      >
+        EXIT
+      </button>
     </>
   );
 }

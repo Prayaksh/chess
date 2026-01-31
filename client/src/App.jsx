@@ -1,5 +1,5 @@
 import "./App.css";
-import { AuthProvider } from "./Provider.jsx";
+import SocketProvider, { AuthProvider } from "./Provider.jsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
 import TestPage from "./pages/TestPage.jsx";
@@ -13,25 +13,27 @@ function App() {
   return (
     //loading state skeleton
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Auth />} />
+      <SocketProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<Auth />} />
 
-          <Route
-            path="/test"
-            element={
-              <ProtectedRoutes>
-                <TestPage />
-              </ProtectedRoutes>
-            }
-          />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/game" element={<Game />} />
+            <Route
+              path="/test"
+              element={
+                <ProtectedRoutes>
+                  <TestPage />
+                </ProtectedRoutes>
+              }
+            />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/game" element={<Game />} />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </SocketProvider>
     </AuthProvider>
   );
 }
