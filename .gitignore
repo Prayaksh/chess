@@ -9,7 +9,9 @@
 *.pem
 
 # Node
-node_modules/
-
+/node_modules/
+**/node_modules/
 # OS
 .DS_Store
+
+/generated/prisma
