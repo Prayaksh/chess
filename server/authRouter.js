@@ -5,27 +5,45 @@ dotenv.config();
 import axios from "axios";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
+import prisma from "./database.js";
+import { error } from "console";
 
 authRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, error: "INCOMPLETE PARAMS" });
+    }
 
     //add this to the database and move to the profile
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ success: false, error: "UNSUCCESSFULL" });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.status(500).json({ success: false, error: "UNSUCCESSFULL" });
+    }
 
     req.session.user = {
-      name: email,
-      email: email,
-      provider: "login",
+      userId: user.id,
     };
 
     if (req.session.user) {
-      res.status(200).json({ success: true });
+      return res.status(200).json({ success: true });
     }
   } catch (error) {
     console.error("error creating user");
-    res.status(500).json({ success: false, error: "UNSUCCESSFULL" });
+    return res.status(500).json({ success: false, error: "UNSUCCESSFULL" });
   }
 });
 
