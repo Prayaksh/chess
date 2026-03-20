@@ -3,6 +3,7 @@ import { authRouter } from "./authRouter.js";
 import session from "express-session";
 import path from "path";
 import { gameRouter } from "./gameRouter.js";
+import pool from "./database.js";
 const app = express();
 const PORT = 3000;
 
@@ -19,6 +20,18 @@ app.use(express.json());
 app.use("/auth", authRouter);
 app.get("/api", (req, res) => {
   res.json({ route: "/api" });
+});
+
+app.get("/database", async (req, res) => {
+  try {
+    const users = await pool.query("SELECT * FROM User");
+    res.send(users);
+  } catch (e) {
+    res.json({
+      message: "An error occurred while fetching user data",
+      error: e,
+    });
+  }
 });
 app.use("/api/game", isAuthenticated, gameRouter);
 

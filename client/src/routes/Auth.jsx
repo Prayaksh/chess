@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import bcrypt from "bcrypt";
 
 import axios from "axios";
 const sendLoginData = async ({ email, password }) => {
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
     const response = await axios.post(
       "http://localhost:3000/auth/login",
       {
         email: email,
-        password: hashedPassword,
+        password: password,
       },
       { withCredentials: true },
     );
