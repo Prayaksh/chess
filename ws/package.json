@@ -14,7 +14,10 @@
   "dependencies": {
     "chess.js": "^1.4.0",
     "crypto": "^1.0.1",
+    "dotenv": "^17.3.1",
+    "jsonwebtoken": "^9.0.3",
     "nodemon": "^3.1.11",
+    "pg": "^8.20.0",
     "socket.io": "^4.8.3"
   }
 }

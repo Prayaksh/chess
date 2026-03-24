@@ -2,14 +2,14 @@ import express from "express";
 import { authRouter } from "./authRouter.js";
 import session from "express-session";
 import path from "path";
-import { gameRouter } from "./gameRouter.js";
+import jwt from "jsonwebtoken";
 import pool from "./database.js";
 const app = express();
 const PORT = 3000;
 
 app.use(
   session({
-    secret: "keyboard cat",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 * 24, sameSite: "lax", secure: false },
@@ -22,9 +22,28 @@ app.get("/api", (req, res) => {
   res.json({ route: "/api" });
 });
 
+app.get("/api/ws-token", isAuthenticated, (req, res) => {
+  console.log("req.session.userID - ", req.session.user.id);
+  const token = jwt.sign(
+    {
+      userId: req.session.user.id,
+      name: req.session.user.name,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" },
+  );
+
+  if (!token) {
+    return res.status(400).json({ success: false, token: null });
+  }
+
+  res.status(200).json({ success: true, token: token });
+});
+
 app.get("/database", async (req, res) => {
+  //to check the connection from the database
   try {
-    const users = await pool.query("SELECT * FROM User");
+    const users = await pool.query(`SELECT * FROM "User"`);
     res.send(users);
   } catch (e) {
     res.json({
@@ -33,7 +52,6 @@ app.get("/database", async (req, res) => {
     });
   }
 });
-app.use("/api/game", isAuthenticated, gameRouter);
 
 app.get("/api/profile", isAuthenticated, (req, res) => {
   res.json({ user: req.session.user, autheticated: true });

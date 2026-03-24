@@ -1,66 +1,42 @@
 export class User {
-  constructor(socket) {
+  constructor(socket, userId, name) {
     this.socket = socket;
-    this.id = socket.id;
-    //when applying the reconnect logic try to make the id constant and not socketid cause it changes with every reconnect
+    this.userId = userId;
+    this.socketId = socket.id;
+    this.name = name;
   }
 }
-
 class SocketManager {
   constructor() {
-    this.socketsmap = new Map(); // which users are in which room (room123 has a and b)
-    this.roomsmap = new Map(); // which room a user is in (a in room123 b in room123)
+    this.rooms = new Map(); // userId -> roomId
   }
+
   setIO(io) {
     this.io = io;
   }
+
   static getInstance() {
-    if (SocketManager.instance) {
-      return SocketManager.instance;
-    } else {
+    if (!SocketManager.instance) {
       SocketManager.instance = new SocketManager();
-      return SocketManager.instance;
     }
+    return SocketManager.instance;
   }
-  addUser(user, roomID) {
-    console.log("add user here");
-    const existing = this.socketsmap.get(roomID) || [];
-    this.socketsmap.set(roomID, [...existing, user]);
-    this.roomsmap.set(user.id, roomID);
 
-    user.socket.join(roomID);
-    console.log("socket joined the room", roomID);
-  }
-  broadcast(roomID, message) {
-    const users = this.socketsmap.get(roomID) || [];
-    if (users.length === 0) {
-      console.warn("Room empty or not found:", roomID);
-      return;
-    }
-
-    this.io.to(roomID).emit("message", message);
+  addUser(user, roomId) {
+    user.socket.join(roomId);
+    this.rooms.set(user.userId, roomId);
   }
 
   removeUser(user) {
-    console.log("socket manager remove user here ");
-    const roomID = this.roomsmap.get(user.id);
-    if (!roomID) {
-      console.error("user not in any room");
-      return;
-    }
-    const room = this.socketsmap.get(roomID) || [];
-    const remainingUser = room.filter((u) => u.id !== user.id);
-    this.socketsmap.set(roomID, remainingUser);
+    const roomId = this.rooms.get(user.userId);
+    if (!roomId) return;
 
-    if (this.socketsmap.get(roomID)?.length === 0) {
-      this.socketsmap.delete(roomID);
-    }
-    console.log("socketManager removeUser working here...");
+    user.socket.leave(roomId);
+    this.rooms.delete(user.userId);
+  }
 
-    this.roomsmap.delete(user.id);
-
-    user.socket.leave(roomID);
-    console.log("Socket left the room");
+  broadcast(roomId, message) {
+    this.io.to(roomId).emit("message", message);
   }
 }
 
