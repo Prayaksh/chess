@@ -19,13 +19,17 @@ authRouter.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt(password, 10);
 
+    const query = `INSERT INTO "User" (email, password, provider) VALUES ($1, $2, $3) RETURNING id;`;
+    const values = [email, hashedPassword, "LOGIN"];
+    const { rows } = await pool.query(query, values); //what if value does not exists?
+    const user = rows[0];
+
+    req.session.user = {
+      userId: user.id,
+    };
+
     //set this is database and authorize the user
     //what a fuckass idiot to not provide the user ID here xD
-    req.session.user = {
-      name: email.slice(0, 5),
-      email: email,
-      provider: "LOGIN",
-    };
   } catch (error) {
     console.error(error);
   }
@@ -183,7 +187,7 @@ authRouter.get(
       const user = rows[0];
 
       req.session.user = {
-        userID: user.id,
+        userId: user.id,
       };
       res.redirect("/profile");
     } catch (error) {
@@ -272,7 +276,7 @@ authRouter.get("/github/callback", async (req, res) => {
       const user = rows[0];
 
       req.session.user = {
-        userID: user.id,
+        userId: user.id,
       };
 
       res.redirect("/profile");

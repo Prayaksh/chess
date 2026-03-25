@@ -3,11 +3,14 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { socket } from "./socket.js";
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(undefined);
+  const [loading, setLoading] = useState(true);
 
   const getUser = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/profile");
+      const response = await axios.get("http://localhost:3000/api/profile", {
+        withCredentials: true,
+      });
 
       if (!response.data.user) {
         setUser(null);
@@ -17,17 +20,20 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("User not logged in", error);
       setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     //to-do make the logic handshake with the browser using cookies to restore the user data back
+    console.log("yepp...");
     getUser();
   }, []);
 
   return (
     //to-do only load the required part where undefined user can move when user is null protect the routes from loading unesseccary things
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

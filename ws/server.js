@@ -3,6 +3,7 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { GameManager } from "./gameManager.js";
 import { socketManager } from "./socketManager.js";
+import pool from "./database.js";
 
 import "dotenv/config";
 
@@ -19,7 +20,7 @@ const io = new Server(httpServer, {
 socketManager.setIO(io);
 const gameManager = new GameManager();
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
 
@@ -28,13 +29,34 @@ io.use((socket, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("decoded is ", decoded)
+    console.log("decoded is ", decoded);
+
+    if (!pool) {
+      return next(new Error("Database configuration error"));
+    }
+
+    const { rows } = await pool.query(
+      `SELECT id, name, email FROM "User" WHERE id = $1`,
+      [decoded.userId],
+    );
+    const user = rows[0];
+
+    if (!user) {
+      return next(new Error("Not Found"));
+    }
+
+    if (!user.name) {
+      socket.user = {
+        userId: decoded.userId,
+        name: user.email.slice(0, 6),
+      };
+      return next();
+    }
 
     socket.user = {
       userId: decoded.userId,
-      name: decoded.name,
+      name: user.name,
     };
-
     next();
   } catch (err) {
     console.error("Auth error:", err.message);
@@ -44,12 +66,12 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
-  console.log("Socket user ID - ", socket.user.userID);
+  console.log("Socket user ID - ", socket.user.userId);
+  console.log("Socket user Name - ", socket.user.name);
 
   const user = {
     socket,
     userId: socket.user.userId,
-    name: socket.user.name,
   };
 
   gameManager.addUser(user);

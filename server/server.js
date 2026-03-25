@@ -23,11 +23,11 @@ app.get("/api", (req, res) => {
 });
 
 app.get("/api/ws-token", isAuthenticated, (req, res) => {
-  console.log("req.session.userID - ", req.session.user.id);
+  console.log("req.session.userId - ", req.session.user.userId);
   const token = jwt.sign(
     {
-      userId: req.session.user.id,
-      name: req.session.user.name,
+      userId: req.session.user.userId,
+      sessionId: req.session.id,
     },
     process.env.JWT_SECRET,
     { expiresIn: "15m" },

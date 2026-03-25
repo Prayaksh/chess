@@ -27,7 +27,14 @@ function App() {
                 </ProtectedRoutes>
               }
             />
-            <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoutes>
+                  <Profile />
+                </ProtectedRoutes>
+              }
+            />
             <Route path="/game" element={<Game />} />
 
             <Route path="*" element={<NotFound />} />

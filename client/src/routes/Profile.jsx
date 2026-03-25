@@ -1,11 +1,10 @@
-import React from "react";
 import { useAuth } from "../hooks/useAuth.jsx";
 
 const Profile = () => {
   const { user } = useAuth();
   return (
     <div>
-      <h1>successfully logged in {user?.provider}</h1>
+      <h1>successfully logged in {user?.userId}</h1>
     </div>
   );
 };

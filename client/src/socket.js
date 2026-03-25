@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-export async function connectSocket() {
+async function connectSocket() {
   try {
     const response = await fetch("http://localhost:3000/api/ws-token", {
       credentials: "include",
@@ -26,27 +26,6 @@ export async function connectSocket() {
 
     socket.on("disconnect", () => {
       console.log("socket disconnected");
-    });
-
-    socket.on("connect_error", async (err) => {
-      console.log("connect error:", err.message);
-
-      if (err.message === "Unauthorized") {
-        try {
-          const res = await fetch("http://localhost:3000/api/ws-token", {
-            credentials: "include",
-          });
-
-          const data = await res.json();
-
-          const { token } = data;
-
-          socket.auth = { token };
-          socket.connect();
-        } catch (e) {
-          console.error("Re-auth failed", e);
-        }
-      }
     });
 
     return socket;
