@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 
 const ProtectedRoutes = ({ children }) => {
   const { user, loading } = useAuth();
+  console.log("ProtectedRoutes useAuth fetched user is - ", user);
 
   if (loading) {
     return <div>Loading...</div>;

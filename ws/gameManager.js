@@ -101,7 +101,6 @@ export class GameManager {
         });
       }
 
-      // 🔥 EXIT
       if (message.type === "exit_game") {
         const game = this.games.find(
           (g) => g.gameID === message.payload.gameID,

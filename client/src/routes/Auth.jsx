@@ -13,6 +13,8 @@ const sendLoginData = async ({ email, password }) => {
       { withCredentials: true },
     );
 
+    console.log("sendLoginData fetched response is - ", response.data);
+
     return response.data;
   } catch (error) {
     console.log("error in sending login data ", error);
@@ -60,6 +62,7 @@ const Auth = () => {
 
       <button
         onClick={() => {
+          console.log("Moving to external redirect /auth/google");
           window.location.href = "/auth/google";
           //automatically redirects to /profile
         }}
@@ -68,6 +71,8 @@ const Auth = () => {
       </button>
       <button
         onClick={() => {
+          console.log("Moving to external redirect /auth/github");
+
           window.location.href = "/auth/github";
           //automatically redirects to /profile
         }}
@@ -76,6 +81,7 @@ const Auth = () => {
       </button>
       <button
         onClick={() => {
+          console.log("moving to home");
           navigate("/");
         }}
       >

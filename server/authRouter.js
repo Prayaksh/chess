@@ -20,7 +20,7 @@ authRouter.post("/signup", async (req, res) => {
     const hashedPassword = await bcrypt(password, 10);
 
     const query = `INSERT INTO "User" (email, password, provider) VALUES ($1, $2, $3) RETURNING id;`;
-    const values = [email, hashedPassword, "LOGIN"];
+    const values = [email, hashedPassword, "CREDENTIALS"];
     const { rows } = await pool.query(query, values); //what if value does not exists?
     const user = rows[0];
 
@@ -57,7 +57,7 @@ authRouter.post("/login", async (req, res) => {
       return res.json({ success: false, message: "Invalid Credentials" }); //capital c for identifier small for password hehe
     }
 
-    if (user.provider === "LOGIN") {
+    if (user.provider === "CREDENTIALS") {
       return res.json({
         success: false,
         message: "Provider changed, try logging from the authorized provider",

@@ -8,7 +8,7 @@ const TestPage = () => {
   return (
     <div>
       Test Page
-      <h1>User is = {user?.provider}</h1>
+      <h1>User is = {user?.userId}</h1>
       <button
         onClick={() => {
           navigate("/");

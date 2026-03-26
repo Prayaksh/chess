@@ -8,15 +8,19 @@ export const AuthProvider = ({ children }) => {
 
   const getUser = async () => {
     try {
+      console.log("get user called");
+
       const response = await axios.get("http://localhost:3000/api/profile", {
         withCredentials: true,
       });
 
+      console.log("fetched data - ", response.data.user);
+
       if (!response.data.user) {
         setUser(null);
+      } else {
+        setUser(response.data.user);
       }
-
-      setUser(response.data.user);
     } catch (error) {
       console.error("User not logged in", error);
       setUser(null);
@@ -27,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     //to-do make the logic handshake with the browser using cookies to restore the user data back
-    console.log("yepp...");
+    console.log("getUser useEffect called");
     getUser();
   }, []);
 
@@ -43,12 +47,14 @@ const SocketProvider = ({ children }) => {
   const [serverMessage, setServerMessage] = useState([]);
 
   useEffect(() => {
+    console.log("SocketProvider useEffect called");
     if (!socket) return;
     socket.on("message", (message) => {
       setServerMessage(message);
     });
 
     return () => {
+      console.log("SocketProvider useEffect return callback called");
       socket.off("message");
     };
   }, []);

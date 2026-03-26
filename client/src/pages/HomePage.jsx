@@ -4,13 +4,15 @@ import { Link, useNavigate } from "react-router-dom";
 
 const HomePage = () => {
   const { user } = useAuth();
+  console.log("user from useAuth in homepage -", user);
 
   const navigate = useNavigate();
   return (
     <div>
-      <h1>the user is {user?.provider}</h1>
+      <h1>the user is {user?.userId}</h1>
       <button
         onClick={() => {
+          console.log("moving to test");
           navigate("/test");
         }}
       >
@@ -18,6 +20,8 @@ const HomePage = () => {
       </button>
       <button
         onClick={() => {
+          console.log("moving to login");
+
           navigate("/login");
         }}
       >
@@ -25,6 +29,8 @@ const HomePage = () => {
       </button>
       <button
         onClick={() => {
+          console.log("moving to game");
+
           navigate("/game");
         }}
       >
