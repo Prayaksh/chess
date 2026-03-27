@@ -30,7 +30,7 @@ export class Game {
     this.P1UserID = P1UserID;
     this.P2UserID = P2UserID;
     this.board = new Chess();
-    this.gameID = gameID || randomUUID();
+    this.gameID = gameID ?? randomUUID();
     this.result = null;
     this.moveCount = 0;
     this.moveTimer = null;
@@ -39,6 +39,8 @@ export class Game {
     this.P2TimeConsumed = 0;
     this.startTime = startTime ? new Date(startTime) : new Date();
     this.lastMoveTime = this.startTime;
+
+    console.log("Game created successfully with gameID :", this.gameID);
   }
   seedMoves(moves) {
     moves.forEach((move) => {
@@ -71,14 +73,14 @@ export class Game {
     const userIds = [this.P1UserID, this.P2UserID].filter(Boolean);
 
     const { rows: users } = await pool.query(
-      `SELECT * FROM "user" WHERE id = ANY($1)`,
+      `SELECT * FROM "User" WHERE id = ANY($1)`,
       [userIds],
     );
 
     try {
       await this.createGameInDb();
     } catch (e) {
-      console.error(e);
+      console.error("An error occurred while creating game in database -", e);
       return;
     }
 
@@ -101,33 +103,35 @@ export class Game {
     this.startTime = new Date(Date.now());
     this.lastMoveTime = this.startTime;
 
-    const { rows } = await pool.query(
+    if (!this.gameID) {
+      console.log("gameID null");
+      return;
+    }
+
+    await pool.query(
       `
-    INSERT INTO "game" (
-      id,
-      "timeControl",
-      status,
-      "startAt",
-      "currentFen",
-      "whitePlayerId",
-      "blackPlayerId"
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING *;
+    INSERT INTO "Game" (
+    id,
+    status,
+    timecontrol,
+    startat,
+    currentfen,
+    whiteplayerid,
+    blackplayerid
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING *;
     `,
       [
-        this.gameId,
+        this.gameID,
+        "ONGOING",
         "CLASSICAL",
-        "IN_PROGRESS",
         this.startTime,
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         this.P1UserID,
         this.P2UserID ?? null,
       ],
     );
-
-    const game = rows[0];
-    this.gameId = game.id;
   }
 
   async addMoveToDb(move, moveTimestamp) {
@@ -138,21 +142,21 @@ export class Game {
 
       await client.query(
         `
-      INSERT INTO "move" (
-        "gameId",
-        "moveNumber",
+      INSERT INTO "Move" (
+        gameid,
+        movenumber,
         "from",
         "to",
-        "before",
-        "after",
-        "createdAt",
-        "timeTaken",
-        "san"
+        before,
+        after,
+        createdat,
+        timetaken,
+        san
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
       `,
         [
-          this.gameId,
+          this.gameID,
           this.moveCount + 1,
           move.from,
           move.to,
@@ -166,11 +170,11 @@ export class Game {
 
       await client.query(
         `
-      UPDATE "game"
-      SET "currentFen" = $1
+      UPDATE "Game"
+      SET currentfen = $1
       WHERE id = $2;
       `,
-        [move.after, this.gameId],
+        [move.after, this.gameID],
       );
 
       await client.query("COMMIT");
@@ -198,7 +202,7 @@ export class Game {
       return;
     }
 
-    const moveTimestamp = new Date();
+    const moveTimestamp = new Date(Date.now());
 
     try {
       if (isPromoting(this.board, move.from, move.to)) {
@@ -228,64 +232,16 @@ export class Game {
         moveTimestamp.getTime() - this.lastMoveTime.getTime();
     }
 
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-
-      await client.query(
-        `
-      INSERT INTO "move" (
-        "gameId",
-        "moveNumber",
-        "from",
-        "to",
-        "before",
-        "after",
-        "createdAt",
-        "timeTaken",
-        "san"
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);
-      `,
-        [
-          this.gameId,
-          this.moveCount + 1,
-          move.from,
-          move.to,
-          move.before,
-          move.after,
-          moveTimestamp,
-          moveTimestamp.getTime() - this.lastMoveTime.getTime(),
-          move.san,
-        ],
-      );
-
-      await client.query(
-        `
-      UPDATE "game"
-      SET "currentFen" = $1
-      WHERE id = $2;
-      `,
-        [move.after, this.gameId],
-      );
-
-      await client.query("COMMIT");
-    } catch (e) {
-      await client.query("ROLLBACK");
-      throw e;
-    } finally {
-      client.release();
-    }
-
+    await this.addMoveToDb(move, moveTimestamp);
     this.resetAbandonTimer();
     this.resetMoveTimer();
 
     this.lastMoveTime = moveTimestamp;
 
     socketManager.broadcast(
-      this.gameId,
+      this.gameID,
       JSON.stringify({
-        type: "move",
+        type: "Move",
         payload: {
           move,
           P1TimeConsumed: this.P1TimeConsumed,
@@ -346,7 +302,7 @@ export class Game {
 
   async exitGame(user) {
     this.endGame(
-      "PLAYER_EXIT",
+      "ABANDONED",
       user.userId === this.P2UserID ? "WHITE_WINS" : "BLACK_WINS",
     );
   }
@@ -360,12 +316,12 @@ export class Game {
       // update game
       const { rows: gameRows } = await client.query(
         `
-      UPDATE "game"
+      UPDATE "Game"
       SET status = $1, result = $2
       WHERE id = $3
       RETURNING *;
       `,
-        [status, result, this.gameId],
+        [status, result, this.gameID],
       );
 
       const game = gameRows[0];
@@ -374,21 +330,21 @@ export class Game {
       const { rows: moves } = await client.query(
         `
       SELECT *
-      FROM "move"
-      WHERE "gameId" = $1
-      ORDER BY "moveNumber" ASC;
+      FROM "Move"
+      WHERE gameid = $1
+      ORDER BY movenumber ASC;
       `,
-        [this.gameId],
+        [this.gameID],
       );
 
       // get players
       const { rows: whitePlayerRows } = await client.query(
-        `SELECT id, name FROM "user" WHERE id = $1;`,
+        `SELECT id, name FROM "User" WHERE id = $1;`,
         [game.whitePlayerId],
       );
 
       const { rows: blackPlayerRows } = await client.query(
-        `SELECT id, name FROM "user" WHERE id = $1;`,
+        `SELECT id, name FROM "User" WHERE id = $1;`,
         [game.blackPlayerId],
       );
 
@@ -398,7 +354,7 @@ export class Game {
       const blackPlayer = blackPlayerRows[0];
 
       socketManager.broadcast(
-        this.gameId,
+        this.gameID,
         JSON.stringify({
           type: "game_ended",
           payload: {

@@ -1,7 +1,7 @@
 import { useAuth } from "../hooks/useAuth.jsx";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
-const ProtectedRoutes = ({ children }) => {
+const ProtectedRoutes = () => {
   const { user, loading } = useAuth();
   console.log("ProtectedRoutes useAuth fetched user is - ", user);
 
@@ -11,9 +11,10 @@ const ProtectedRoutes = ({ children }) => {
 
   if (!user) {
     console.log("user null moving to login");
-    return <Navigate to={"/login"} replace />;
+    return <Navigate to="/login" replace />;
   }
-  return children;
+
+  return <Outlet />;
 };
 
 export default ProtectedRoutes;

@@ -17,12 +17,16 @@ authRouter.post("/signup", async (req, res) => {
         .json({ success: false, message: "Email or Password not provided" });
     }
 
-    const hashedPassword = await bcrypt(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const query = `INSERT INTO "User" (email, password, provider) VALUES ($1, $2, $3) RETURNING id;`;
-    const values = [email, hashedPassword, "CREDENTIALS"];
+    //todo - make a check for already existing user trying to signup again
+
+    const query = `INSERT INTO "User" (email, username, password, provider) VALUES ($1, $2, $3, $4) RETURNING id;`;
+    const values = [email, email.slice(0, 5), hashedPassword, "CREDENTIALS"];
     const { rows } = await pool.query(query, values); //what if value does not exists?
     const user = rows[0];
+
+    console.log("User id is -", user);
 
     req.session.user = {
       userId: user.id,
@@ -30,6 +34,19 @@ authRouter.post("/signup", async (req, res) => {
 
     //set this is database and authorize the user
     //what a fuckass idiot to not provide the user ID here xD
+
+    req.session.save((error) => {
+      if (error) {
+        console.error("An error occurred", error);
+        return res.json({
+          success: false,
+          message: "Error occurred while saving session",
+        });
+      }
+      res
+        .status(200)
+        .json({ success: true, message: "Successfully signed user up" });
+    });
   } catch (error) {
     console.error(error);
   }
@@ -37,9 +54,10 @@ authRouter.post("/signup", async (req, res) => {
 
 authRouter.post("/login", async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { email: identifier, password } = req.body;
 
     if (!identifier || !password) {
+      console.log("Email or Password not provided");
       return res
         .status(400)
         .json({ success: false, message: "Email or Password not provided" });
@@ -54,10 +72,12 @@ authRouter.post("/login", async (req, res) => {
     //user not found
     if (!user) {
       //conscious decision to not directly redirect to the /signup route cause that would cause issues if user by mistake wrote some wrong user id
+      console.log("Database error");
       return res.json({ success: false, message: "Invalid Credentials" }); //capital c for identifier small for password hehe
     }
 
-    if (user.provider === "CREDENTIALS") {
+    if (user.provider !== "CREDENTIALS") {
+      console.log("User exists through Oauth");
       return res.json({
         success: false,
         message: "Provider changed, try logging from the authorized provider",
@@ -67,10 +87,10 @@ authRouter.post("/login", async (req, res) => {
     const status = await bcrypt.compare(password, user.password);
 
     if (!status) {
+      console.log("Invalid Credentials");
       return res.json({ success: false, message: "Invalid credentials" });
     }
-    //check in database and log user in if correct
-    //no doubt
+
     req.session.user = {
       userId: user.id, //hehe
     };

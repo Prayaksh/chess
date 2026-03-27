@@ -1,0 +1,6 @@
+                  id                  | username |        name        |              email              |  provider   |                           password                           | rating |         createdat          | lastlogin 
+--------------------------------------+----------+--------------------+---------------------------------+-------------+--------------------------------------------------------------+--------+----------------------------+-----------
+ 8b4c24b3-5995-4a3d-947f-d5d5c3602afc |          | Prayaksh Upadhayay | prayaksh.upadhayay@adypu.edu.in | GOOGLE      |                                                              |   1200 | 2026-03-23 18:56:17.626408 | 
+ 6be91eec-0e61-42e0-b3a3-b24fc10f3f09 | naren    |                    | narendra@gmail.com              | CREDENTIALS | $2b$10$ygJOXw8Nhqfbr/AHKoUwc.SwcdZm8Y5MkxNTD42IR1PoaV2D67mG6 |   1200 | 2026-03-27 19:52:21.160844 | 
+(2 rows)
+

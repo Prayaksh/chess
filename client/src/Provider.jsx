@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     //to-do only load the required part where undefined user can move when user is null protect the routes from loading unesseccary things
-    <AuthContext.Provider value={{ user, setUser, loading }}>
+    <AuthContext.Provider value={{ user, getUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

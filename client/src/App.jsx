@@ -16,26 +16,14 @@ function App() {
       <SocketProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<Auth />} />
 
-            <Route
-              path="/test"
-              element={
-                <ProtectedRoutes>
-                  <TestPage />
-                </ProtectedRoutes>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoutes>
-                  <Profile />
-                </ProtectedRoutes>
-              }
-            />
-            <Route path="/game" element={<Game />} />
+            <Route element={<ProtectedRoutes />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/test" element={<TestPage />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/game" element={<Game />} />
+            </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>

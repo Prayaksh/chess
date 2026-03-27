@@ -72,6 +72,7 @@ io.on("connection", (socket) => {
   const user = {
     socket,
     userId: socket.user.userId,
+    name: socket.user.name
   };
 
   gameManager.addUser(user);
