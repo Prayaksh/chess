@@ -189,9 +189,6 @@ authRouter.get(
 
       const profile = userInfo.data;
 
-      //=====database error=========
-      //column "provider" of relation "User" does not exist
-
       const query = `
       INSERT INTO "User" (email, name, provider)
       VALUES ($1, $2, $3)

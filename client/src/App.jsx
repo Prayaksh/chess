@@ -1,5 +1,5 @@
 import "./App.css";
-import SocketProvider, { AuthProvider } from "./Provider.jsx";
+import { SocketProvider, AuthProvider } from "./Provider.jsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
 import TestPage from "./pages/TestPage.jsx";

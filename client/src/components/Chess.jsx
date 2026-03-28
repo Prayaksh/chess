@@ -1,5 +1,4 @@
-import { useState } from "react";
-import useSocket from "../hooks/useSocket.jsx";
+import { useSocket } from "../hooks/useSocket.jsx";
 
 const Chess = () => {
   const { serverMessage, emitEvent } = useSocket();

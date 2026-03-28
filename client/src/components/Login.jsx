@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { useSocket } from "../hooks/useSocket.jsx";
 
 const sendLoginData = async ({ email, password }) => {
   try {
@@ -24,6 +25,7 @@ const sendLoginData = async ({ email, password }) => {
 const Login = () => {
   const navigate = useNavigate();
   const { getUser } = useAuth();
+  const { connectSocket } = useSocket();
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   return (
@@ -56,7 +58,11 @@ const Login = () => {
             return;
           }
 
+          //providers hydration
           await getUser();
+          console.log("get User done");
+          await connectSocket();
+          console.log("connectSocket done");
 
           navigate("/profile");
         }}

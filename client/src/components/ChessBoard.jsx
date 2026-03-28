@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
-import useSocket from "../hooks/useSocket.jsx";
-import { socket } from "../socket.js";
+import { useSocket } from "../hooks/useSocket.jsx";
 function ChessBoard() {
-  const { serverMessage, emitEvent } = useSocket();
+  const { serverMessage, emitEvent, userSocket: socket } = useSocket();
   const [gameState, setGameState] = useState({
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     gameID: null,

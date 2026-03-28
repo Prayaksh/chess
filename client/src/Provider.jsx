@@ -1,7 +1,8 @@
 import { AuthContext, SocketContext } from "./Context.jsx";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { socket } from "./socket.js";
+import { io } from "socket.io-client";
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(undefined);
   const [loading, setLoading] = useState(true);
@@ -30,45 +31,87 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    //to-do make the logic handshake with the browser using cookies to restore the user data back
-    console.log("getUser useEffect called");
     getUser();
   }, []);
 
   return (
-    //to-do only load the required part where undefined user can move when user is null protect the routes from loading unesseccary things
     <AuthContext.Provider value={{ user, getUser, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
-//provide the data recieved and provide the method to send events
-const SocketProvider = ({ children }) => {
+
+export const SocketProvider = ({ children }) => {
+  console.log("Socket Provider called");
   const [serverMessage, setServerMessage] = useState([]);
+  const [userSocket, setUserSocket] = useState(undefined);
+
+  const connectSocket = async () => {
+    try {
+      console.log("connectSocket called");
+      const response = await axios.get("http://localhost:3000/api/ws-token", {
+        withCredentials: true,
+      });
+
+      const data = await response.data;
+
+      if (!data.success) {
+        console.error("Error while fetching JWT Token");
+        return;
+      }
+
+      const { token } = data;
+
+      const socket = io("http://localhost:3001", {
+        auth: { token },
+        withCredentials: true,
+      });
+
+      socket.on("connect", () => {
+        console.log("socket connected", socket.id);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("socket disconnected");
+      });
+
+      setUserSocket(socket);
+    } catch (err) {
+      console.error("Socket connection failed", err);
+    }
+  };
+  useEffect(() => {
+    console.log("Connecting socket...");
+    connectSocket();
+  }, []);
 
   useEffect(() => {
-    console.log("SocketProvider useEffect called");
-    if (!socket) return;
-    socket.on("message", (message) => {
+    console.log("Attaching listeners");
+    if (!userSocket) {
+      console.log("Socket not found");
+      return;
+    }
+    userSocket.on("message", (message) => {
       setServerMessage(message);
     });
 
     return () => {
-      console.log("SocketProvider useEffect return callback called");
-      socket.off("message");
+      userSocket.off("message");
     };
-  }, []);
+  }, [userSocket]);
 
   const emitEvent = (event, payload) => {
+    if (!userSocket) return;
+
     console.log("emitEvent called");
-    socket.emit(event, payload);
     console.log("socket emitted event- ", event, " payload - ", payload);
+    userSocket.emit(event, payload);
   };
   return (
-    <SocketContext.Provider value={{ serverMessage, emitEvent }}>
+    <SocketContext.Provider
+      value={{ serverMessage, emitEvent, connectSocket, userSocket }}
+    >
       {children}
     </SocketContext.Provider>
   );
 };
-
-export default SocketProvider;
