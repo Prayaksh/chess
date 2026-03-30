@@ -32,16 +32,18 @@ export class Game {
     this.board = new Chess();
     this.gameID = gameID ?? randomUUID();
     this.result = null;
-    this.moveCount = 0;
-    this.moveTimer = null;
-    this.timer = null;
-    this.P1TimeConsumed = 0;
-    this.P2TimeConsumed = 0;
+    this.moveCount = 0; //for enpasant
+    this.moveTimer = null; //each move timer
+    this.timer = null; //overall game timer
+    this.P1TimeConsumed = 0; //total time consumed by P1
+    this.P2TimeConsumed = 0; //total time consumed by P2
     this.startTime = startTime ? new Date(startTime) : new Date();
     this.lastMoveTime = this.startTime;
 
     console.log("Game created successfully with gameID :", this.gameID);
   }
+
+  //moving the board once rejoined logic
   seedMoves(moves) {
     moves.forEach((move) => {
       if (isPromoting(this.board, move.from, move.to)) {
@@ -99,6 +101,7 @@ export class Game {
     });
   }
 
+  //onetime creation
   async createGameInDb() {
     this.startTime = new Date(Date.now());
     this.lastMoveTime = this.startTime;
@@ -188,10 +191,12 @@ RETURNING *;
 
   async makeMove(user, move) {
     if (this.board.turn() === "w" && user.userId !== this.P1UserID) {
+      console.log("White's turn");
       return;
     }
 
     if (this.board.turn() === "b" && user.userId !== this.P2UserID) {
+      console.log("Black's turn");
       return;
     }
 
@@ -216,9 +221,10 @@ RETURNING *;
           from: move.from,
           to: move.to,
         });
+        console.log("successfull move");
       }
     } catch (e) {
-      console.error("Error while making move");
+      console.error("Wrong move");
       return;
     }
 
@@ -232,25 +238,39 @@ RETURNING *;
         moveTimestamp.getTime() - this.lastMoveTime.getTime();
     }
 
-    await this.addMoveToDb(move, moveTimestamp);
+    const boardHistory = this.board.history({ verbose: true })[0];
+    const verboseMove = {
+      ...move,
+      before: boardHistory.before,
+      after: boardHistory.after,
+      san: boardHistory.san,
+    };
+    try {
+      await this.addMoveToDb(verboseMove, moveTimestamp);
+    } catch (error) {
+      console.error(
+        "An error occurred while saving moves in database -",
+        error,
+      );
+      return;
+    }
+
     this.resetAbandonTimer();
     this.resetMoveTimer();
 
     this.lastMoveTime = moveTimestamp;
 
-    socketManager.broadcast(
-      this.gameID,
-      JSON.stringify({
-        type: "Move",
-        payload: {
-          move,
-          P1TimeConsumed: this.P1TimeConsumed,
-          P2TimeConsumed: this.P2TimeConsumed,
-        },
-      }),
-    );
+    socketManager.broadcast(this.gameID, {
+      type: "move",
+      payload: {
+        move,
+        P1TimeConsumed: this.P1TimeConsumed,
+        P2TimeConsumed: this.P2TimeConsumed,
+      },
+    });
 
     if (this.board.isGameOver()) {
+      console.log("Game over flag turned true");
       const result = this.board.isDraw()
         ? "DRAW"
         : this.board.turn() === "b"
@@ -314,22 +334,19 @@ RETURNING *;
       await client.query("BEGIN");
 
       // update game
-      const { rows: gameRows } = await client.query(
+      await client.query(
         `
       UPDATE "Game"
       SET status = $1, result = $2
-      WHERE id = $3
-      RETURNING *;
+      WHERE id = $3;
       `,
         [status, result, this.gameID],
       );
 
-      const game = gameRows[0];
-
       // get moves ordered
       const { rows: moves } = await client.query(
         `
-      SELECT *
+      SELECT "to","from"
       FROM "Move"
       WHERE gameid = $1
       ORDER BY movenumber ASC;
@@ -337,15 +354,13 @@ RETURNING *;
         [this.gameID],
       );
 
-      // get players
-      const { rows: whitePlayerRows } = await client.query(
-        `SELECT id, name FROM "User" WHERE id = $1;`,
-        [game.whitePlayerId],
+      const { rows: whitePlayerRows } = await pool.query(
+        `SELECT * FROM "User" WHERE id = $1`,
+        [this.P1UserID],
       );
-
-      const { rows: blackPlayerRows } = await client.query(
-        `SELECT id, name FROM "User" WHERE id = $1;`,
-        [game.blackPlayerId],
+      const { rows: blackPlayerRows } = await pool.query(
+        `SELECT * FROM "User" WHERE id = $1`,
+        [this.P2UserID],
       );
 
       await client.query("COMMIT");
@@ -353,25 +368,22 @@ RETURNING *;
       const whitePlayer = whitePlayerRows[0];
       const blackPlayer = blackPlayerRows[0];
 
-      socketManager.broadcast(
-        this.gameID,
-        JSON.stringify({
-          type: "game_ended",
-          payload: {
-            result,
-            status,
-            moves,
-            blackPlayer: {
-              id: blackPlayer?.id,
-              name: blackPlayer?.name,
-            },
-            whitePlayer: {
-              id: whitePlayer?.id,
-              name: whitePlayer?.name,
-            },
+      socketManager.broadcast(this.gameID, {
+        type: "game_ended",
+        payload: {
+          result,
+          status,
+          moves,
+          blackPlayer: {
+            id: blackPlayer?.id,
+            name: blackPlayer?.name,
           },
-        }),
-      );
+          whitePlayer: {
+            id: whitePlayer?.id,
+            name: whitePlayer?.name,
+          },
+        },
+      });
     } catch (e) {
       await client.query("ROLLBACK");
       throw e;

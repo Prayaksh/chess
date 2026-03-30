@@ -65,9 +65,18 @@ export class GameManager {
           return;
         }
 
-        game.makeMove(user, message.payload.move);
+        try {
+          game.makeMove(user, message.payload.move);
+        } catch (error) {
+          console.log("Error while making move -", error);
+          user.socket.emit("message", {
+            type: "move_error",
+            message: "Invalid move",
+          });
+        }
 
         if (game.result) {
+          console.log("Result initialized calling removeGame");
           this.removeGame(game.gameID);
         }
       }
