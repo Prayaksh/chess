@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { useSocket } from "../hooks/useSocket.jsx";
+import { useAuth } from "../hooks/useAuth.jsx";
 function ChessBoard() {
+  const { user } = useAuth();
   const { serverMessage, emitEvent, userSocket: socket } = useSocket();
   const [gameState, setGameState] = useState({
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     gameID: null,
     moves: [],
-    blackPlayer: { id: null },
-    whitePlayer: { id: null },
+    blackPlayer: { id: null, name: null },
+    whitePlayer: { id: null, name: null },
     message: null,
     //todo timeconsumed addition
   });
@@ -224,7 +226,7 @@ function ChessBoard() {
               gameState.blackPlayer.id ? (
                 <Chessboard
                   options={
-                    gameState.blackPlayer.id === socket.id
+                    gameState.blackPlayer.id === user.userId
                       ? blackBoardOptions
                       : whiteBoardOptions
                   }

@@ -1,11 +1,13 @@
 import ChessBoard from "../components/ChessBoard.jsx";
 import Chess from "../components/Chess.jsx";
+import Monitor from "../components/Monitor.jsx";
 
 const Game = () => {
   return (
     <>
-      {/* <ChessBoard></ChessBoard> */}
-      <Chess />
+      <ChessBoard></ChessBoard>
+      <Monitor />
+      {/* <Chess /> */}
     </>
   );
 };

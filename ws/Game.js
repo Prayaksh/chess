@@ -263,6 +263,7 @@ RETURNING *;
     socketManager.broadcast(this.gameID, {
       type: "move",
       payload: {
+        fen: this.board.fen(),
         move,
         P1TimeConsumed: this.P1TimeConsumed,
         P2TimeConsumed: this.P2TimeConsumed,
