@@ -4,11 +4,19 @@ import session from "express-session";
 import path from "path";
 import jwt from "jsonwebtoken";
 import pool from "./database.js";
+import connectPgSimple from "connect-pg-simple";
 const app = express();
 const PORT = 3000;
 
+const PgSession = connectPgSimple(session);
+
 app.use(
   session({
+    store: new PgSession({
+      pool: pool,
+      tableName: "user_sessions",
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,

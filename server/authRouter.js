@@ -12,9 +12,10 @@ authRouter.post("/signup", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.log("Invalid credentials");
       return res
         .status(400)
-        .json({ success: false, message: "Email or Password not provided" });
+        .json({ success: false, message: "Missing Credentials" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,6 +26,13 @@ authRouter.post("/signup", async (req, res) => {
     const values = [email, email.slice(0, 5), hashedPassword, "CREDENTIALS"];
     const { rows } = await pool.query(query, values); //what if value does not exists?
     const user = rows[0];
+
+    if (!user) {
+      console.log("Error while accessing the database");
+      return res
+        .status(400)
+        .json({ success: false, message: "Database Error" });
+    }
 
     console.log("User id is -", user);
 
@@ -49,6 +57,10 @@ authRouter.post("/signup", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    return res.json({
+      success: false,
+      message: "Something went wrong while signing user up",
+    });
   }
 });
 
@@ -60,7 +72,7 @@ authRouter.post("/login", async (req, res) => {
       console.log("Email or Password not provided");
       return res
         .status(400)
-        .json({ success: false, message: "Email or Password not provided" });
+        .json({ success: false, message: "Missing Credentials" });
     }
 
     const query = `SELECT id, username, email, password, provider FROM "User" WHERE email = $1 OR username = $1 LIMIT 1; `;
@@ -113,21 +125,6 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.get("/google", (req, res) => {
-  const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: "http://localhost:3000/auth/google/callback",
-    response_type: "code",
-    scope: "profile email",
-    access_type: "offline",
-    prompt: "none", //"consent" once done with development
-  });
-
-  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-
-  res.redirect(googleAuthUrl);
-});
-
 authRouter.post("/logout", (req, res) => {
   req.session.destroy((error) => {
     if (error) {
@@ -143,53 +140,65 @@ authRouter.post("/logout", (req, res) => {
   });
 });
 
-authRouter.get(
-  "/google/callback",
+authRouter.get("/google", (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: "http://localhost:3000/auth/google/callback",
+    response_type: "code",
+    scope: "profile email",
+    access_type: "offline",
+    prompt: "none", //"consent" once done with development
+  });
 
-  async (req, res) => {
-    try {
-      const code = req.query.code;
-      if (!code) {
-        return res
-          .status(400)
-          .send("Authorization code missing from Google redirect.");
-      }
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 
-      const tokenParams = new URLSearchParams({
-        grant_type: "authorization_code",
-        code: code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: "http://localhost:3000/auth/google/callback",
-      });
+  res.redirect(googleAuthUrl);
+});
 
-      const tokenResponse = await axios.post(
-        "https://oauth2.googleapis.com/token",
-        tokenParams.toString(),
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
+authRouter.get("/google/callback", async (req, res) => {
+  try {
+    const code = req.query.code;
+    if (!code) {
+      return res
+        .status(400)
+        .send("Authorization code missing from Google redirect.");
+    }
+
+    const tokenParams = new URLSearchParams({
+      grant_type: "authorization_code",
+      code: code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: "http://localhost:3000/auth/google/callback",
+    });
+
+    const tokenResponse = await axios.post(
+      "https://oauth2.googleapis.com/token",
+      tokenParams.toString(),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      );
+      },
+    );
 
-      const { access_token } = tokenResponse.data;
-      if (!access_token) {
-        return res.status(400).send("Missing Access Token");
-      }
+    const { access_token } = tokenResponse.data;
+    if (!access_token) {
+      return res.status(400).send("Missing Access Token");
+    }
 
-      const userInfo = await axios.get(
-        "https://www.googleapis.com/oauth2/v2/userinfo",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
+    const userInfo = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
         },
-      );
+      },
+    );
 
-      const profile = userInfo.data;
+    const profile = userInfo.data;
 
-      const query = `
+    const query = `
       INSERT INTO "User" (email, name, provider)
       VALUES ($1, $2, $3)
       ON CONFLICT (email)
@@ -198,21 +207,27 @@ authRouter.get(
       RETURNING *;
       `;
 
-      const values = [profile.email, profile.name, "GOOGLE"];
+    const values = [profile.email, profile.name, "GOOGLE"];
 
-      const { rows } = await pool.query(query, values); //what if value does not exists?
-      const user = rows[0];
+    const { rows } = await pool.query(query, values); //what if value does not exists?
+    const user = rows[0];
 
-      req.session.user = {
-        userId: user.id,
-      };
-      res.redirect("/profile");
-    } catch (error) {
-      console.error("OAuth Error:", error.response?.data || error);
-      res.status(500).send("Authentication failed");
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Something went wrong while accessing the database",
+      });
     }
-  },
-);
+
+    req.session.user = {
+      userId: user.id,
+    };
+    res.redirect("/profile");
+  } catch (error) {
+    console.error("OAuth Error:", error.response?.data || error);
+    res.status(500).send("Authentication failed");
+  }
+});
 
 authRouter.get("/github", (req, res) => {
   const state = randomUUID();
@@ -292,15 +307,23 @@ authRouter.get("/github/callback", async (req, res) => {
       const { rows } = await pool.query(query, values);
       const user = rows[0];
 
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: "Something went wrong while accessing the database",
+        });
+      }
+
       req.session.user = {
         userId: user.id,
       };
 
       res.redirect("/profile");
     } catch (error) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Error while accessing database" });
+      return res.status(400).json({
+        success: false,
+        message: "Somehting went wrong while accessing database",
+      });
     }
   } catch (error) {
     console.log(error);

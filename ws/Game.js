@@ -300,12 +300,15 @@ RETURNING *;
     if (this.timer) {
       clearTimeout(this.timer);
     }
-    this.timer = setTimeout(() => {
-      this.endGame(
-        "ABANDONED",
-        this.board.turn() === "b" ? "WHITE_WINS" : "BLACK_WINS",
-      );
-    }, 60 * 1000);
+    this.timer = setTimeout(
+      () => {
+        this.endGame(
+          "ABANDONED",
+          this.board.turn() === "b" ? "WHITE_WINS" : "BLACK_WINS",
+        );
+      },
+      5 * 60 * 1000,
+    );
   }
 
   async resetMoveTimer() {
