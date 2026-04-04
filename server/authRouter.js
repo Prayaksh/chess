@@ -9,7 +9,7 @@ import pool from "./database.js";
 
 authRouter.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
     if (!email || !password) {
       console.log("Invalid credentials");
@@ -22,8 +22,8 @@ authRouter.post("/signup", async (req, res) => {
 
     //todo - make a check for already existing user trying to signup again
 
-    const query = `INSERT INTO "User" (email, username, password, provider) VALUES ($1, $2, $3, $4) RETURNING id;`;
-    const values = [email, email.slice(0, 5), hashedPassword, "CREDENTIALS"];
+    const query = `INSERT INTO "User" (email, username, name, password, provider) VALUES ($1, $2, $3, $4, $5) RETURNING id;`;
+    const values = [email, name, name, hashedPassword, "CREDENTIALS"];
     const { rows } = await pool.query(query, values); //what if value does not exists?
     const user = rows[0];
 
