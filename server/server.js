@@ -1,10 +1,12 @@
 import express from "express";
+import { createServer } from "http";
 import { authRouter } from "./authRouter.js";
 import session from "express-session";
 import path from "path";
 import jwt from "jsonwebtoken";
 import pool from "./database.js";
 import connectPgSimple from "connect-pg-simple";
+import { socketInitializer } from "../ws/server.js";
 const app = express();
 const PORT = 3000;
 
@@ -74,6 +76,10 @@ function isAuthenticated(req, res, next) {
     .json({ error: "UNAUTHORIZED", autheticated: false, user: null });
 }
 
+const server = createServer(app);
+
+socketInitializer(server);
+
 //serving the static resources (js and css)
 app.use(express.static(path.join(process.cwd(), "../client/dist")));
 
@@ -82,6 +88,6 @@ app.use(/.*/, (req, res) => {
   res.sendFile(path.join(process.cwd(), "../client/dist/index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Listening at http://Localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log("Running on 3000");
 });

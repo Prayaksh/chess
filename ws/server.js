@@ -1,4 +1,3 @@
-import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { GameManager } from "./gameManager.js";
@@ -6,83 +5,65 @@ import { socketManager } from "./socketManager.js";
 import pool from "./database.js";
 
 import "dotenv/config";
+export function socketInitializer(httpServer) {
+  const io = new Server(httpServer, {
+    cors: {
+      origin: true,
+      credentials: true,
+    },
+  });
 
-const PORT = 3001;
-const httpServer = createServer();
+  socketManager.setIO(io);
+  const gameManager = new GameManager();
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: "http://localhost:3000",
-    credentials: true,
-  },
-});
+  io.use(async (socket, next) => {
+    try {
+      const token = socket.handshake.auth?.token;
 
-socketManager.setIO(io);
-const gameManager = new GameManager();
+      if (!token) {
+        return next(new Error("Unauthorized: No token"));
+      }
 
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth?.token;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!token) {
-      return next(new Error("Unauthorized: No token"));
-    }
+      const { rows } = await pool.query(
+        `SELECT id, name, email FROM "User" WHERE id = $1`,
+        [decoded.userId],
+      );
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("decoded is ", decoded);
+      const user = rows[0];
 
-    if (!pool) {
-      return next(new Error("Database configuration error"));
-    }
+      if (!user) {
+        return next(new Error("Not Found"));
+      }
 
-    const { rows } = await pool.query(
-      `SELECT id, name, email FROM "User" WHERE id = $1`,
-      [decoded.userId],
-    );
-    const user = rows[0];
-
-    if (!user) {
-      return next(new Error("Not Found"));
-    }
-
-    if (!user.name) {
       socket.user = {
         userId: decoded.userId,
-        name: user.email.slice(0, 6),
+        name: user.name || user.email.slice(0, 6),
       };
-      return next();
+
+      next();
+    } catch (err) {
+      console.error("Auth error:", err.message);
+      next(new Error("Unauthorized"));
     }
-
-    socket.user = {
-      userId: decoded.userId,
-      name: user.name,
-    };
-    next();
-  } catch (err) {
-    console.error("Auth error:", err.message);
-    next(new Error("Unauthorized"));
-  }
-});
-
-io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
-  console.log("Socket user ID - ", socket.user.userId);
-  console.log("Socket user Name - ", socket.user.name);
-
-  const user = {
-    socket,
-    userId: socket.user.userId,
-    name: socket.user.name,
-  };
-
-  gameManager.addUser(user);
-
-  socket.on("disconnect", () => {
-    console.log("Socket disconnected:", socket.id);
-    gameManager.removeUser(user);
   });
-});
 
-httpServer.listen(PORT, () => {
-  console.log(`WebSocket server running on port ${PORT}`);
-});
+  io.on("connection", (socket) => {
+    console.log("Socket connected:", socket.id);
+
+    const user = {
+      socket,
+      userId: socket.user.userId,
+      name: socket.user.name,
+    };
+
+    gameManager.addUser(user);
+
+    socket.on("disconnect", () => {
+      gameManager.removeUser(user);
+    });
+  });
+
+  return io;
+}

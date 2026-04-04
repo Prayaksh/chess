@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log("get user called");
 
-      const response = await axios.get("http://localhost:3000/api/profile", {
+      const response = await axios.get("/api/profile", {
         withCredentials: true,
       });
 
@@ -49,7 +49,7 @@ export const SocketProvider = ({ children }) => {
   const connectSocket = async () => {
     try {
       console.log("connectSocket called");
-      const response = await axios.get("http://localhost:3000/api/ws-token", {
+      const response = await axios.get("/api/ws-token", {
         withCredentials: true,
       });
 
@@ -62,7 +62,7 @@ export const SocketProvider = ({ children }) => {
 
       const { token } = data;
 
-      const socket = io("http://localhost:3001", {
+      const socket = io("/", {
         auth: { token },
         withCredentials: true,
       });

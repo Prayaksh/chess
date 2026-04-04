@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-
 import Login from "../components/Login.jsx";
 import Signup from "../components/Signup.jsx";
+import LoginPage from "../pages/LoginPage.jsx";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -9,8 +9,7 @@ const Auth = () => {
   return (
     <div>
       <div>
-        <Login />
-        <Signup />
+        <LoginPage />
       </div>
 
       <button
