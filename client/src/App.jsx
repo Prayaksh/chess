@@ -3,11 +3,12 @@ import { SocketProvider, AuthProvider } from "./Provider.jsx";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
 import TestPage from "./pages/TestPage.jsx";
-import Auth from "./routes/Auth.jsx";
 import Profile from "./routes/Profile.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Game from "./routes/Game.jsx";
 import ProtectedRoutes from "./routes/ProtectedRoutes.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
+import PublicRoute from "./routes/PublicRoute.jsx";
 
 function App() {
   return (
@@ -16,7 +17,14 @@ function App() {
       <SocketProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Auth />} />
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              }
+            />
 
             <Route element={<ProtectedRoutes />}>
               <Route path="/" element={<HomePage />} />

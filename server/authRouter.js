@@ -147,7 +147,7 @@ authRouter.get("/google", (req, res) => {
     response_type: "code",
     scope: "profile email",
     access_type: "offline",
-    prompt: "none", //"consent" once done with development
+    prompt: "consent", //"consent" once done with development
   });
 
   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;

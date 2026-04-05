@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../hooks/useAuth.jsx";
+import { useSocket } from "../hooks/useSocket.jsx";
 
 const sendLoginData = async ({ email, password }) => {
   try {
@@ -36,6 +38,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { getUser } = useAuth();
+  const { connectSocket } = useSocket();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,7 +56,9 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res.success) {
-      navigate("/profile"); // redirect on success
+      await getUser();
+      await connectSocket();
+      navigate("/profile");
     } else {
       setError(res.message || "Something went wrong");
     }
@@ -69,7 +75,6 @@ export default function LoginPage() {
           {isSignup ? "Sign up to get started" : "Login to your account"}
         </p>
 
-        {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {isSignup && (
             <input
@@ -108,20 +113,17 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* OAUTH DIVIDER */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-[hsl(0_0%_10%)]"></div>
           <span className="text-xs text-[hsl(0_0%_75%)]">or continue with</span>
           <div className="flex-1 h-px bg-[hsl(0_0%_10%)]"></div>
         </div>
 
-        {/* OAUTH BUTTONS */}
         <div className="space-y-3">
           <button
             className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] hover:bg-[hsl(0_0%_12%)] transition active:scale-[0.98]"
             onClick={() => (window.location.href = "/auth/google")}
           >
-            {/* You can replace this with your downloaded SVG as <img src="..." /> */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -151,7 +153,6 @@ export default function LoginPage() {
             className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] hover:bg-[hsl(0_0%_12%)] transition active:scale-[0.98]"
             onClick={() => (window.location.href = "/auth/github")}
           >
-            {/* Replace with your downloaded GitHub SVG if needed */}
             <svg
               version="1.0"
               xmlns="http://www.w3.org/2000/svg"
