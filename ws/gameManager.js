@@ -10,6 +10,11 @@ export class GameManager {
   }
 
   addUser(user) {
+    if (this.users.includes(user)) {
+      console.log("user exists already in the users array");
+      console.log(this.users);
+      return;
+    }
     this.users.push(user);
     this.addHandler(user);
   }
@@ -150,6 +155,7 @@ export class GameManager {
         });
 
         socketManager.addUser(user, gameID);
+        availableGame.rejoinGame(user);
       }
 
       if (message.type === "exit_game") {

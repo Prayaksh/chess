@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer } from "http";
 import { authRouter } from "./authRouter.js";
+import { gameRouter } from "./gameRouter.js";
 import session from "express-session";
 import path from "path";
 import jwt from "jsonwebtoken";
@@ -50,22 +51,11 @@ app.get("/api/ws-token", isAuthenticated, (req, res) => {
   res.status(200).json({ success: true, token: token });
 });
 
-app.get("/database", async (req, res) => {
-  //to check the connection from the database
-  try {
-    const users = await pool.query(`SELECT * FROM "User"`);
-    res.send(users);
-  } catch (e) {
-    res.json({
-      message: "An error occurred while fetching user data",
-      error: e,
-    });
-  }
-});
-
 app.get("/api/profile", isAuthenticated, (req, res) => {
   res.json({ user: req.session.user, autheticated: true });
 });
+
+app.use("/api/game", isAuthenticated, gameRouter);
 
 function isAuthenticated(req, res, next) {
   if (req.session && req.session.user) {

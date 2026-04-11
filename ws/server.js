@@ -61,6 +61,8 @@ export function socketInitializer(httpServer) {
     gameManager.addUser(user);
 
     socket.on("disconnect", () => {
+      console.log("Socket disconnected:", socket.id);
+
       gameManager.removeUser(user);
     });
   });

@@ -28,7 +28,9 @@ export function isPromoting(chess, from, to) {
 export class Game {
   constructor(P1UserID, P2UserID, gameID = null, startTime = null) {
     this.P1UserID = P1UserID;
+    this.P1Username = "Guest";
     this.P2UserID = P2UserID;
+    this.P2Username = "Guest";
     this.board = new Chess();
     this.gameID = gameID ?? randomUUID();
     this.result = null;
@@ -39,6 +41,7 @@ export class Game {
     this.P2TimeConsumed = 0; //total time consumed by P2
     this.startTime = startTime ? new Date(startTime) : new Date();
     this.lastMoveTime = this.startTime;
+    this.gameType = "CLASSICAL"; //todo make this for all 4 types
 
     console.log("Game created successfully with gameID :", this.gameID);
   }
@@ -87,14 +90,16 @@ export class Game {
     }
 
     const WhitePlayer = users.find((user) => user.id === this.P1UserID);
+    this.P1Username = WhitePlayer?.name;
     const BlackPlayer = users.find((user) => user.id === this.P2UserID);
+    this.P2Username = BlackPlayer?.name;
 
     socketManager.broadcast(this.gameID, {
       type: "init_game",
       payload: {
         gameID: this.gameID,
-        whitePlayer: { name: WhitePlayer?.name, id: this.P1UserID },
-        blackPlayer: { name: BlackPlayer?.name, id: this.P2UserID },
+        whitePlayer: { name: this.P1Username, id: this.P1UserID },
+        blackPlayer: { name: this.P2Username, id: this.P2UserID },
         fen: this.board.fen(),
         moves: [],
       },
@@ -104,7 +109,30 @@ export class Game {
   //onetime creation
   async createGameInDb() {
     this.startTime = new Date(Date.now());
-    this.lastMoveTime = this.startTime;
+
+    let gameTime;
+
+    switch (this.gameType) {
+      case "BULLET":
+        gameTime = 3 * 60 * 1000;
+        break;
+
+      case "BLITZ":
+        gameTime = 10 * 60 * 1000;
+        break;
+
+      case "RAPID":
+        gameTime = 60 * 60 * 1000;
+        break;
+
+      case "CLASSICAL":
+        gameTime = 120 * 60 * 1000;
+        break;
+
+      default:
+        gameTime = 120 * 60 * 1000;
+    }
+    this.endTime = new Date(this.startTime.getTime() + gameTime);
 
     if (!this.gameID) {
       console.log("gameID null");
@@ -118,18 +146,20 @@ export class Game {
     status,
     timecontrol,
     startat,
+    endat,
     currentfen,
     whiteplayerid,
     blackplayerid
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING *;
     `,
       [
         this.gameID,
         "ONGOING",
-        "CLASSICAL",
+        this.gameType,
         this.startTime,
+        this.endTime,
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         this.P1UserID,
         this.P2UserID ?? null,
@@ -322,6 +352,23 @@ RETURNING *;
     this.moveTimer = setTimeout(() => {
       this.endGame("TIME_UP", turn === "b" ? "WHITE_WINS" : "BLACK_WINS");
     }, timeLeft);
+  }
+  rejoinGame(user) {
+    if (!user.userId === this.P1UserID || !user.userId === this.P2UserID) {
+      console.log("cannot join");
+      return;
+    }
+
+    user.socket.emit("message", {
+      type: "join_room",
+      payload: {
+        gameID: this.gameID,
+        whitePlayer: { name: this.P1Username, id: this.P1UserID },
+        blackPlayer: { name: this.P2Username, id: this.P2UserID },
+        fen: this.board.fen(),
+        moves: [],
+      },
+    });
   }
 
   async exitGame(user) {

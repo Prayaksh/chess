@@ -1,21 +1,43 @@
-import React from "react";
-import { useAuth } from "../hooks/useAuth.jsx";
-import { useNavigate } from "react-router-dom";
+import { useSocket } from "../hooks/useSocket.jsx";
+import { useState } from "react";
 
 const TestPage = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [input, setInput] = useState("");
+
+  const handleSend = () => {
+    try {
+      const parsed = JSON.parse(input);
+      emitEvent("message", parsed);
+    } catch (err) {
+      alert("Invalid JSON");
+    }
+  };
+  const { serverMessage, emitEvent } = useSocket();
+
   return (
     <div>
-      Test Page
-      <h1>User is = {user?.userId}</h1>
+      <p>{JSON.stringify(serverMessage, null, 2)}</p>
       <button
         onClick={() => {
-          navigate("/");
+          emitEvent("message", { type: "init_game", payload: {} });
         }}
       >
-        Move to Home
+        Init Game
       </button>
+
+      <div style={{ marginTop: "20px" }}>
+        <textarea
+          rows={6}
+          cols={50}
+          placeholder='Enter JSON like: {"type":"move","payload":{}}'
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+
+        <br />
+
+        <button onClick={handleSend}>Send JSON</button>
+      </div>
     </div>
   );
 };

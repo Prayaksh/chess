@@ -3,6 +3,7 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { useSocket } from "../hooks/useSocket.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
+import axios from "axios";
 function ChessBoard() {
   const { user } = useAuth();
   const { serverMessage, emitEvent, userSocket: socket } = useSocket();
@@ -23,6 +24,30 @@ function ChessBoard() {
   // track the current position of the chess game in state
   const [moveFrom, setMoveFrom] = useState("");
   const [optionSquares, setOptionSquares] = useState({});
+
+  useEffect(() => {
+    //reconnect logic
+    const fetchActiveGame = async () => {
+      const res = await axios.get("/api/game/active", {
+        withCredentials: true,
+      });
+
+      if (!res.data.success) {
+        //no active game found
+        return;
+      }
+
+      const activeGameID = res.data.gameID;
+      emitEvent("message", {
+        type: "join_room",
+        payload: {
+          gameID: activeGameID,
+        },
+      });
+    };
+
+    fetchActiveGame();
+  }, []);
 
   useEffect(() => {
     setGameState((prev) => ({ ...prev, ...serverMessage.payload }));
