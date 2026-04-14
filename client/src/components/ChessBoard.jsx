@@ -6,7 +6,7 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import axios from "axios";
 function ChessBoard() {
   const { user } = useAuth();
-  const { serverMessage, emitEvent, userSocket: socket } = useSocket();
+  const { serverMessage, emitEvent } = useSocket();
   const [gameState, setGameState] = useState({
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     gameID: null,
@@ -187,6 +187,11 @@ function ChessBoard() {
     setMoveFrom("");
     setOptionSquares({});
   }
+  function customPieces() {
+    wP: ({ squareWidth }) => {
+      <div style={{ fontSize: squareWidth * 0.8 }}>♙</div>;
+    };
+  }
 
   // set the chessboard options for white's perspective
   const whiteBoardOptions = {
@@ -209,7 +214,6 @@ function ChessBoard() {
     squareStyles: optionSquares,
     id: "multiplayer-black",
   };
-  // render both chessboards side by side with a gap
   return (
     <>
       {serverMessage.type === "game_ended" ? (
@@ -255,6 +259,7 @@ function ChessBoard() {
                       ? blackBoardOptions
                       : whiteBoardOptions
                   }
+                  customPieces={customPieces}
                 />
               ) : (
                 <div>Waiting for another player</div>

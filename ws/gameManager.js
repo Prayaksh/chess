@@ -106,7 +106,19 @@ export class GameManager {
 
         const gameFromDb = rows[0];
 
-        if (availableGame && !availableGame.P2UserID) {
+        const isWhite = user.userId === gameFromDb.whiteplayerid;
+        const isBlack = user.userId === gameFromDb.blackplayerid;
+
+        if (!isWhite && !isBlack) {
+          user.socket.emit("message", { type: "not_your_game" });
+          return;
+        }
+
+        if (
+          availableGame &&
+          !availableGame.P2UserID &&
+          user.userId !== availableGame.P1UserID
+        ) {
           socketManager.addUser(user, availableGame.gameID);
           await availableGame.updateSecondPlayer(user.userId);
           return;
@@ -118,35 +130,41 @@ export class GameManager {
             payload: {
               result: gameFromDb.result,
               status: gameFromDb.status,
-              //add moves too, gameFromDb would not have moves, line - 128
+              //add moves too, gameFromDb would not have moves
               blackPlayer: {
-                id: gameFromDb.blackPlayer.id,
-                name: gameFromDb.blackPlayer.name,
+                id: gameFromDb.blackplayerid,
+                name: "guest", //todo another fetch from database using the id for the name,
               },
               whitePlayer: {
-                id: gameFromDb.whitePlayer.id,
-                name: gameFromDb.whitePlayer.name,
+                id: gameFromDb.whiteplayerid,
+                name: "guest", //todo another fetch from database using the id for the name,
               },
             },
           });
           return;
         }
         if (!availableGame) {
-          const game = new Game(
-            gameFromDb.whitePlayerId,
-            gameFromDb.blackPlayerId,
-            gameFromDb.id,
-            gameFromDb.startAt,
-          );
+          let existing = this.games.find((g) => g.gameID === gameID);
 
-          const { rows: moves } = await pool.query(
-            `SELECT * FROM "Move" WHERE gameid = $1 ORDER BY movenumber ASC`,
-            [gameID],
-          );
+          if (!existing) {
+            const game = new Game(
+              gameFromDb.whiteplayerid,
+              gameFromDb.blackplayerid,
+              gameFromDb.id,
+              gameFromDb.startat,
+            );
 
-          game.seedMoves(moves);
-          this.games.push(game);
-          availableGame = game;
+            const { rows: moves } = await pool.query(
+              `SELECT * FROM "Move" WHERE gameid = $1 ORDER BY movenumber ASC`,
+              [gameID],
+            );
+
+            game.seedMoves(moves);
+            this.games.push(game);
+            availableGame = game;
+          } else {
+            availableGame = existing;
+          }
         }
 
         user.socket.emit("message", {

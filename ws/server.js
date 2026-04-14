@@ -3,8 +3,8 @@ import jwt from "jsonwebtoken";
 import { GameManager } from "./gameManager.js";
 import { socketManager } from "./socketManager.js";
 import pool from "./database.js";
-
 import "dotenv/config";
+
 export function socketInitializer(httpServer) {
   const io = new Server(httpServer, {
     cors: {

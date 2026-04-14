@@ -353,14 +353,22 @@ RETURNING *;
       this.endGame("TIME_UP", turn === "b" ? "WHITE_WINS" : "BLACK_WINS");
     }, timeLeft);
   }
-  rejoinGame(user) {
-    if (!user.userId === this.P1UserID || !user.userId === this.P2UserID) {
+  async rejoinGame(user) {
+    if (user.userId !== this.P1UserID && user.userId !== this.P2UserID) {
       console.log("cannot join");
       return;
     }
 
+    const { rows: users } = await pool.query(
+      `SELECT id, name FROM "User" WHERE id = ANY($1)`,
+      [[this.P1UserID, this.P2UserID]],
+    );
+
+    this.P1Username = users.find((u) => u.id === this.P1UserID)?.name;
+    this.P2Username = users.find((u) => u.id === this.P2UserID)?.name;
+
     user.socket.emit("message", {
-      type: "join_room",
+      type: "joined_room",
       payload: {
         gameID: this.gameID,
         whitePlayer: { name: this.P1Username, id: this.P1UserID },
