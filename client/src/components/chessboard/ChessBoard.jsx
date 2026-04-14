@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
-import { useSocket } from "../hooks/useSocket.jsx";
-import { useAuth } from "../hooks/useAuth.jsx";
+import { useSocket } from "../../hooks/useSocket.jsx";
+import { useAuth } from "../../hooks/useAuth.jsx";
 import axios from "axios";
+import { customPieces } from "./CustomPieces.jsx";
 function ChessBoard() {
   const { user } = useAuth();
   const { serverMessage, emitEvent } = useSocket();
@@ -187,13 +188,7 @@ function ChessBoard() {
     setMoveFrom("");
     setOptionSquares({});
   }
-  function customPieces() {
-    wP: ({ squareWidth }) => {
-      <div style={{ fontSize: squareWidth * 0.8 }}>♙</div>;
-    };
-  }
 
-  // set the chessboard options for white's perspective
   const whiteBoardOptions = {
     canDragPiece: canDragPieceWhite,
     position: gameState.fen,
@@ -202,9 +197,9 @@ function ChessBoard() {
     boardOrientation: "white",
     squareStyles: optionSquares,
     id: "multiplayer-white",
+    pieces: customPieces,
   };
 
-  // set the chessboard options for black's perspective
   const blackBoardOptions = {
     canDragPiece: canDragPieceBlack,
     position: gameState.fen,
@@ -213,6 +208,7 @@ function ChessBoard() {
     boardOrientation: "black",
     squareStyles: optionSquares,
     id: "multiplayer-black",
+    pieces: customPieces,
   };
   return (
     <>
@@ -259,7 +255,6 @@ function ChessBoard() {
                       ? blackBoardOptions
                       : whiteBoardOptions
                   }
-                  customPieces={customPieces}
                 />
               ) : (
                 <div>Waiting for another player</div>

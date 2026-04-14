@@ -71,7 +71,7 @@ export class GameManager {
         }
 
         try {
-          game.makeMove(user, message.payload.move);
+          await game.makeMove(user, message.payload.move);
         } catch (error) {
           console.log("Error while making move -", error);
           user.socket.emit("message", {

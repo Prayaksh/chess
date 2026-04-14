@@ -1,4 +1,4 @@
-import ChessBoard from "../components/ChessBoard.jsx";
+import ChessBoard from "../components/chessboard/ChessBoard.jsx";
 import Chess from "../components/Chess.jsx";
 import Monitor from "../components/Monitor.jsx";
 

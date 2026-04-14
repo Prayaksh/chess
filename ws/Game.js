@@ -3,8 +3,6 @@ import { Chess } from "chess.js";
 import { randomUUID } from "crypto";
 import pool from "./database.js";
 
-const GAME_TIME_MS = 10 * 60 * 1000;
-
 export function isPromoting(chess, from, to) {
   if (!from) {
     return false;
@@ -268,7 +266,8 @@ RETURNING *;
         moveTimestamp.getTime() - this.lastMoveTime.getTime();
     }
 
-    const boardHistory = this.board.history({ verbose: true })[0];
+    const history = this.board.history({ verbose: true });
+    const boardHistory = history[history.length - 1];
     const verboseMove = {
       ...move,
       before: boardHistory.before,
@@ -345,9 +344,30 @@ RETURNING *;
     if (this.moveTimer) {
       clearTimeout(this.moveTimer);
     }
+
+    let gameTime;
+
+    switch (this.gameType) {
+      case "BULLET":
+        gameTime = 3 * 60 * 1000;
+        break;
+      case "BLITZ":
+        gameTime = 10 * 60 * 1000;
+        break;
+      case "RAPID":
+        gameTime = 60 * 60 * 1000;
+        break;
+      case "CLASSICAL":
+        gameTime = 120 * 60 * 1000;
+        break;
+      default:
+        gameTime = 120 * 60 * 1000;
+    }
+
     const turn = this.board.turn();
-    const timeLeft =
-      GAME_TIME_MS - (turn === "w" ? this.P1TimeConsumed : this.P2TimeConsumed);
+    const consumed = turn === "w" ? this.P1TimeConsumed : this.P2TimeConsumed;
+
+    const timeLeft = Math.max(0, gameTime - consumed);
 
     this.moveTimer = setTimeout(() => {
       this.endGame("TIME_UP", turn === "b" ? "WHITE_WINS" : "BLACK_WINS");
@@ -364,6 +384,16 @@ RETURNING *;
       [[this.P1UserID, this.P2UserID]],
     );
 
+    const { rows: moves } = await pool.query(
+      `
+      SELECT "to","from"
+      FROM "Move"
+      WHERE gameid = $1
+      ORDER BY movenumber ASC;
+      `,
+      [this.gameID],
+    );
+
     this.P1Username = users.find((u) => u.id === this.P1UserID)?.name;
     this.P2Username = users.find((u) => u.id === this.P2UserID)?.name;
 
@@ -374,7 +404,7 @@ RETURNING *;
         whitePlayer: { name: this.P1Username, id: this.P1UserID },
         blackPlayer: { name: this.P2Username, id: this.P2UserID },
         fen: this.board.fen(),
-        moves: [],
+        moves: moves,
       },
     });
   }
