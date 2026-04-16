@@ -65,13 +65,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[hsl(0_0%_0%)] text-[hsl(0_0%_95%)] px-4">
-      <div className="w-full max-w-md p-6 sm:p-8 rounded-2xl bg-[hsl(0_0%_5%)] shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-[hsl(0_0%_10%)]">
+    <div className="min-h-screen flex items-center justify-center bg-bg text-text-primary px-4">
+      <div className="w-full max-w-md p-6 sm:p-8 rounded-2xl bg-surface shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-border">
         <h2 className="text-xl sm:text-2xl font-semibold tracking-wide mb-1 sm:mb-2">
           {isSignup ? "Create Account" : "Welcome Back"}
         </h2>
 
-        <p className="text-xs sm:text-sm text-[hsl(0_0%_75%)] mb-5 sm:mb-6">
+        <p className="text-xs sm:text-sm text-text-secondary mb-5 sm:mb-6">
           {isSignup ? "Sign up to get started" : "Login to your account"}
         </p>
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
               placeholder="Full Name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] placeholder:text-[hsl(0_0%_75%)] focus:outline-none focus:ring-1 focus:ring-[hsl(0_0%_75%)]"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-surface-2 border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-text-secondary"
             />
           )}
 
@@ -91,7 +91,7 @@ export default function LoginPage() {
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] placeholder:text-[hsl(0_0%_75%)] focus:outline-none focus:ring-1 focus:ring-[hsl(0_0%_75%)]"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-surface-2 border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-text-secondary"
           />
 
           <input
@@ -99,7 +99,7 @@ export default function LoginPage() {
             placeholder="Password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] placeholder:text-[hsl(0_0%_75%)] focus:outline-none focus:ring-1 focus:ring-[hsl(0_0%_75%)]"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-surface-2 border border-border text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-text-secondary"
           />
 
           {error && <p className="text-xs text-red-400">{error}</p>}
@@ -107,21 +107,21 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 sm:py-3 rounded-lg bg-[hsl(0_0%_95%)] text-[hsl(0_0%_0%)] font-medium shadow-md hover:opacity-90 transition active:scale-[0.98] disabled:opacity-50"
+            className="w-full py-2.5 sm:py-3 rounded-lg bg-text-primary text-bg font-medium shadow-md hover:opacity-90 transition active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? "Processing..." : isSignup ? "Sign Up" : "Login"}
           </button>
         </form>
 
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-[hsl(0_0%_10%)]"></div>
-          <span className="text-xs text-[hsl(0_0%_75%)]">or continue with</span>
-          <div className="flex-1 h-px bg-[hsl(0_0%_10%)]"></div>
+          <div className="flex-1 h-px bg-border"></div>
+          <span className="text-xs text-text-secondary">or continue with</span>
+          <div className="flex-1 h-px bg-border"></div>
         </div>
 
         <div className="space-y-3">
           <button
-            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] hover:bg-[hsl(0_0%_12%)] transition active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg bg-surface-2 border border-border text-text-primary hover:bg-surface-hover transition active:scale-[0.98]"
             onClick={() => (window.location.href = "/auth/google")}
           >
             <svg
@@ -150,7 +150,7 @@ export default function LoginPage() {
           </button>
 
           <button
-            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg bg-[hsl(0_0%_10%)] border border-[hsl(0_0%_10%)] text-[hsl(0_0%_95%)] hover:bg-[hsl(0_0%_12%)] transition active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg bg-surface-2 border border-border text-text-primary hover:bg-surface-hover transition active:scale-[0.98]"
             onClick={() => (window.location.href = "/auth/github")}
           >
             <svg
@@ -172,14 +172,14 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="text-xs sm:text-sm text-[hsl(0_0%_75%)] mt-5 sm:mt-6 text-center">
+        <p className="text-xs sm:text-sm text-text-secondary mt-5 sm:mt-6 text-center">
           {isSignup ? "Already have an account?" : "Don't have an account?"}
           <button
             onClick={() => {
               setIsSignup(!isSignup);
               setError("");
             }}
-            className="ml-1.5 sm:ml-2 text-[hsl(0_0%_95%)] hover:underline"
+            className="ml-1.5 sm:ml-2 text-text-primary hover:underline"
           >
             {isSignup ? "Login" : "Sign Up"}
           </button>

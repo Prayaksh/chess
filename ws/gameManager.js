@@ -5,7 +5,7 @@ import pool from "./database.js";
 export class GameManager {
   constructor() {
     this.games = [];
-    this.pendingGameID = null; //todo - make it an array to avoid race condition
+    this.pendingGames = new Map();
     this.users = [];
   }
 
@@ -22,13 +22,14 @@ export class GameManager {
   addHandler(user) {
     user.socket.on("message", async (message) => {
       if (message.type === "init_game") {
-        if (this.pendingGameID) {
-          const game = this.games.find((g) => g.gameID === this.pendingGameID);
+        const gameType = message.payload?.gameType || "CLASSICAL";
 
-          if (!game) {
-            console.log("not found");
-            return;
-          }
+        const pendingGameID = this.pendingGames.get(gameType);
+
+        if (pendingGameID) {
+          const game = this.games.find((g) => g.gameID === pendingGameID);
+
+          if (!game) return;
 
           if (user.userId === game.P1UserID) {
             socketManager.broadcast(game.gameID, {
@@ -39,19 +40,18 @@ export class GameManager {
           }
 
           socketManager.addUser(user, game.gameID);
-          await game?.updateSecondPlayer(user.userId);
+          await game.updateSecondPlayer(user.userId);
 
-          this.pendingGameID = null;
+          this.pendingGames.delete(gameType);
         } else {
-          const game = new Game(user.userId, null);
+          const game = new Game(user.userId, null, null, null, gameType);
 
-          if (!game.gameID) {
-            console.log("Game not created");
-            return;
-          }
+          if (!game.gameID) return;
+
           this.games.push(game);
 
-          this.pendingGameID = game.gameID;
+          this.pendingGames.set(gameType, game.gameID);
+
           socketManager.addUser(user, game.gameID);
 
           socketManager.broadcast(game.gameID, {
@@ -133,11 +133,11 @@ export class GameManager {
               //add moves too, gameFromDb would not have moves
               blackPlayer: {
                 id: gameFromDb.blackplayerid,
-                name: "guest", //todo another fetch from database using the id for the name,
+                //todo another fetch from database using the id for the name,
               },
               whitePlayer: {
                 id: gameFromDb.whiteplayerid,
-                name: "guest", //todo another fetch from database using the id for the name,
+                //todo another fetch from database using the id for the name,
               },
             },
           });
@@ -152,6 +152,7 @@ export class GameManager {
               gameFromDb.blackplayerid,
               gameFromDb.id,
               gameFromDb.startat,
+              gameFromDb.timecontrol,
             );
 
             const { rows: moves } = await pool.query(

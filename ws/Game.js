@@ -24,7 +24,13 @@ export function isPromoting(chess, from, to) {
     .includes(to);
 }
 export class Game {
-  constructor(P1UserID, P2UserID, gameID = null, startTime = null) {
+  constructor(
+    P1UserID,
+    P2UserID,
+    gameID = null,
+    startTime = null,
+    gameType = "CLASSICAL",
+  ) {
     this.P1UserID = P1UserID;
     this.P1Username = "Guest";
     this.P2UserID = P2UserID;
@@ -39,7 +45,7 @@ export class Game {
     this.P2TimeConsumed = 0; //total time consumed by P2
     this.startTime = startTime ? new Date(startTime) : new Date();
     this.lastMoveTime = this.startTime;
-    this.gameType = "CLASSICAL"; //todo make this for all 4 types
+    this.gameType = gameType;
 
     console.log("Game created successfully with gameID :", this.gameID);
   }
