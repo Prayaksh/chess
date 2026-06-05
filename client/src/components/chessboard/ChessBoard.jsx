@@ -5,9 +5,25 @@ import { useSocket } from "../../hooks/useSocket.jsx";
 import { useAuth } from "../../hooks/useAuth.jsx";
 import axios from "axios";
 import { customPieces } from "./CustomPieces.jsx";
+function PlayerBar({ player }) {
+  return (
+    <div className="flex items-center justify-between px-3 py-2 rounded-lg border bg-surface-2 border-border">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-bg flex items-center justify-center text-xs">
+          {player?.name?.[0] || "?"}
+        </div>
+        <span className="text-sm text-text-primary">
+          {player?.name || "Waiting..."}
+        </span>
+      </div>
+      <div className="text-xs text-text-secondary">05:00</div>
+    </div>
+  );
+}
 function ChessBoard() {
   const { user } = useAuth();
   const { serverMessage, emitEvent } = useSocket();
+
   const [gameState, setGameState] = useState({
     fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     gameID: null,
@@ -15,35 +31,28 @@ function ChessBoard() {
     blackPlayer: { id: null, name: null },
     whitePlayer: { id: null, name: null },
     message: null,
-    //todo timeconsumed addition
   });
 
-  // create a chess game using a ref to maintain the game state across renders
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
-  // track the current position of the chess game in state
   const [moveFrom, setMoveFrom] = useState("");
   const [optionSquares, setOptionSquares] = useState({});
+  const [gameType, setGameType] = useState("CLASSICAL");
+
+  const types = ["BULLET", "BLITZ", "RAPID", "CLASSICAL"];
 
   useEffect(() => {
-    //reconnect logic
     const fetchActiveGame = async () => {
       const res = await axios.get("/api/game/active", {
         withCredentials: true,
       });
 
-      if (!res.data.success) {
-        //no active game found
-        return;
-      }
+      if (!res.data.success) return;
 
-      const activeGameID = res.data.gameID;
       emitEvent("message", {
         type: "join_room",
-        payload: {
-          gameID: activeGameID,
-        },
+        payload: { gameID: res.data.gameID },
       });
     };
 
@@ -190,7 +199,7 @@ function ChessBoard() {
   }
 
   const whiteBoardOptions = {
-    canDragPiece: canDragPieceWhite,
+    canDragPieceWhite: canDragPieceWhite,
     position: gameState.fen,
     onPieceDrop,
     onSquareClick,
@@ -201,7 +210,7 @@ function ChessBoard() {
   };
 
   const blackBoardOptions = {
-    canDragPiece: canDragPieceBlack,
+    canDragPieceBlack: canDragPieceBlack,
     position: gameState.fen,
     onPieceDrop,
     onSquareClick,
@@ -210,72 +219,135 @@ function ChessBoard() {
     id: "multiplayer-black",
     pieces: customPieces,
   };
+
+  const isPlayerWhite = gameState.whitePlayer?.id === user?.userId;
+
   return (
-    <>
-      {serverMessage.type === "game_ended" ? (
-        <div>GAME OVER {serverMessage.payload.result}</div>
-      ) : gameState.gameID ? (
-        <div>Connected to the game</div>
-      ) : (
-        <button
-          onClick={() => {
-            emitEvent("message", { type: "init_game", payload: {} });
-          }}
-        >
-          New Game
-        </button>
-      )}
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          justifyContent: "center",
-          flexWrap: "wrap",
-          padding: "10px",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              textAlign: "center",
-            }}
-          >
-            GameID - {gameState.gameID}
-          </p>
-          <div
-            style={{
-              maxWidth: "400px",
-            }}
-          >
-            {gameState.gameID ? (
-              gameState.blackPlayer.id ? (
-                <Chessboard
-                  options={
-                    gameState.blackPlayer.id === user.userId
-                      ? blackBoardOptions
-                      : whiteBoardOptions
+    <div className="h-screen overflow-hidden bg-bg text-text-primary flex items-center justify-center px-4">
+      <div className="w-full max-w-7xl h-full grid grid-cols-[260px_1fr_260px] gap-4 py-4">
+        <div className="bg-surface border border-border rounded-xl p-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold">Play Chess</h2>
+              <p className="text-xs text-text-secondary">Select time control</p>
+            </div>
+
+            {!gameState.gameID ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  {types.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setGameType(type)}
+                      className={`py-3 text-xs rounded-lg border transition-all ${
+                        gameType === type
+                          ? "bg-surface border-border shadow-[0_0_10px_rgba(255,255,255,0.05)]"
+                          : "bg-bg hover:bg-surface"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() =>
+                    emitEvent("message", {
+                      type: "init_bot_game",
+                      payload: { gameType },
+                    })
                   }
-                />
-              ) : (
-                <div>Waiting for another player</div>
-              )
+                  className="w-full py-3 text-xs bg-surface border border-border rounded-lg hover:bg-surface-hover transition-all active:scale-95"
+                >
+                  Start Game
+                </button>
+              </>
             ) : (
-              <div>Waiting to initialize the game</div>
+              <div className="text-xs space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Game</span>
+                  <span>{gameState.gameID}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">Status</span>
+                  <span>
+                    {gameState.blackPlayer?.id ? "Playing" : "Waiting"}
+                  </span>
+                </div>
+              </div>
             )}
+          </div>
+
+          {gameState.gameID && (
+            <button
+              onClick={() =>
+                emitEvent("message", {
+                  type: "exit_game",
+                  payload: { gameID: gameState.gameID },
+                })
+              }
+              className="mt-4 py-2 text-xs border border-red-500/40 text-red-400 rounded-lg hover:bg-red-500/10 transition"
+            >
+              Resign / Exit
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="text-xs text-text-secondary">
+            {gameState.blackPlayer?.id
+              ? "Match in progress"
+              : "Waiting for opponent..."}
+          </div>
+
+          <div className="w-full max-w-xl flex flex-col gap-3">
+            <PlayerBar player={gameState.blackPlayer} />
+
+            <div className="relative">
+              <div className="absolute inset-0 bg-white/5 blur-2xl opacity-20 rounded-2xl" />
+
+              <div className="relative bg-surface border border-border rounded-2xl p-4">
+                {gameState.gameID ? (
+                  gameState.blackPlayer?.id ? (
+                    <Chessboard
+                      width={520}
+                      {...(isPlayerWhite
+                        ? whiteBoardOptions
+                        : blackBoardOptions)}
+                    />
+                  ) : (
+                    <div className="h-130 flex items-center justify-center text-sm text-text-secondary">
+                      Waiting for opponent...
+                    </div>
+                  )
+                ) : (
+                  <div className="h-130 flex flex-col items-center justify-center text-text-secondary gap-2">
+                    <div className="text-lg">♟️</div>
+                    <p className="text-sm">Create a game to begin</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <PlayerBar player={gameState.whitePlayer} />
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div className="bg-surface border border-border rounded-xl p-4 flex flex-col">
+          <h2 className="text-xs text-text-secondary mb-2">Moves</h2>
+
+          <div className="grid grid-cols-2 gap-x-4 text-xs">
+            {gameState.moves.slice(0, 40).map((move, i) => (
+              <div key={i} className="text-text-primary">
+                {i + 1}. {move.from}-{move.to}
+              </div>
+            ))}
           </div>
         </div>
       </div>
-      <button
-        onClick={() => {
-          emitEvent("message", {
-            type: "exit_game",
-            payload: { gameID: gameState.gameID },
-          });
-        }}
-      >
-        EXIT
-      </button>
-    </>
+    </div>
   );
 }
 export default ChessBoard;

@@ -45,13 +45,15 @@ export class Game {
     this.P2TimeConsumed = 0; //total time consumed by P2
     this.startTime = startTime ? new Date(startTime) : new Date();
     this.lastMoveTime = this.startTime;
-    this.gameType = gameType;
+    this.gameType = gameType; // BULLET BLITZ CLASSICAL RAPID
 
     console.log("Game created successfully with gameID :", this.gameID);
   }
 
   //moving the board once rejoined logic
   seedMoves(moves) {
+    this.board = new Chess();
+
     moves.forEach((move) => {
       if (isPromoting(this.board, move.from, move.to)) {
         this.board.move({ from: move.from, to: move.to, promotion: "q" });
@@ -59,7 +61,9 @@ export class Game {
         this.board.move({ from: move.from, to: move.to });
       }
     });
+
     this.moveCount = moves.length;
+
     if (moves.length > 0 && moves[moves.length - 1].createdAt) {
       this.lastMoveTime = new Date(moves[moves.length - 1].createdAt);
     }
@@ -73,11 +77,21 @@ export class Game {
         }
       }
     });
+
     this.resetAbandonTimer();
     this.resetMoveTimer();
   }
   async updateSecondPlayer(P2UserID) {
     this.P2UserID = P2UserID;
+
+    await pool.query(
+      `
+    UPDATE "Game"
+    SET blackplayerid = $1, status = 'ONGOING'
+    WHERE id = $2
+    `,
+      [this.P2UserID, this.gameID],
+    );
 
     const userIds = [this.P1UserID, this.P2UserID].filter(Boolean);
 
@@ -86,15 +100,9 @@ export class Game {
       [userIds],
     );
 
-    try {
-      await this.createGameInDb();
-    } catch (e) {
-      console.error("An error occurred while creating game in database -", e);
-      return;
-    }
-
     const WhitePlayer = users.find((user) => user.id === this.P1UserID);
     this.P1Username = WhitePlayer?.name;
+
     const BlackPlayer = users.find((user) => user.id === this.P2UserID);
     this.P2Username = BlackPlayer?.name;
 
@@ -110,7 +118,6 @@ export class Game {
     });
   }
 
-  //onetime creation
   async createGameInDb() {
     this.startTime = new Date(Date.now());
 
@@ -120,47 +127,38 @@ export class Game {
       case "BULLET":
         gameTime = 3 * 60 * 1000;
         break;
-
       case "BLITZ":
         gameTime = 10 * 60 * 1000;
         break;
-
       case "RAPID":
         gameTime = 60 * 60 * 1000;
         break;
-
       case "CLASSICAL":
         gameTime = 120 * 60 * 1000;
         break;
-
       default:
         gameTime = 120 * 60 * 1000;
     }
-    this.endTime = new Date(this.startTime.getTime() + gameTime);
 
-    if (!this.gameID) {
-      console.log("gameID null");
-      return;
-    }
+    this.endTime = new Date(this.startTime.getTime() + gameTime);
 
     await pool.query(
       `
     INSERT INTO "Game" (
-    id,
-    status,
-    timecontrol,
-    startat,
-    endat,
-    currentfen,
-    whiteplayerid,
-    blackplayerid
-)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING *;
+      id,
+      status,
+      timecontrol,
+      startat,
+      endat,
+      currentfen,
+      whiteplayerid,
+      blackplayerid
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `,
       [
         this.gameID,
-        "ONGOING",
+        this.P2UserID ? "ONGOING" : "WAITING",
         this.gameType,
         this.startTime,
         this.endTime,
@@ -402,6 +400,8 @@ RETURNING *;
 
     this.P1Username = users.find((u) => u.id === this.P1UserID)?.name;
     this.P2Username = users.find((u) => u.id === this.P2UserID)?.name;
+
+    this.seedMoves(moves);
 
     user.socket.emit("message", {
       type: "joined_room",

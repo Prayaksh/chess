@@ -1,0 +1,5 @@
+export const BOT_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+export const BOT_USER = {
+  userId: BOT_USER_ID,
+};

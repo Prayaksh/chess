@@ -45,6 +45,7 @@ export class GameManager {
           this.pendingGames.delete(gameType);
         } else {
           const game = new Game(user.userId, null, null, null, gameType);
+          await game.createGameInDb();
 
           if (!game.gameID) return;
 
